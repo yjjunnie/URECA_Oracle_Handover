@@ -77,9 +77,37 @@ Metrics extracted (12): `confidence_score`, `ptm`, `iptm`, `complex_plddt`,
 `iptm_prot_grna`, `iptm_grna_target`, `iptm_prot_target`.
 
 **Outcome.** Run across 4 datasets (1,296 guides total), then re-run protein-balanced.
-**Same null result as AF3** — best |ρ| = 0.175, nothing survives in the balanced analysis.
-Results in `boltz/correlation_results/`, copied into
+**Same null result as AF3** — best |ρ| = 0.175, and **0 of 36 balanced tests significant**.
+Full matrices in `04_results.md` §2–3. Results in `boltz/correlation_results/`, copied into
 [`../results/boltz/`](../results/boltz/).
+
+**Two supporting Boltz artifacts, easy to miss:**
+
+- **`Boltz Inference Guide.ipynb`** (in the parent folder, not `boltz/`) — an 18-cell
+  methods notebook written while porting the AF3 experiment to Boltz. **It has no executed
+  outputs — it is a design document, not a results notebook.** Contents worth keeping:
+  an AF3-vs-Boltz difference table (JSON/`dialect: alphafold3` vs YAML, RNA handling, MSA),
+  the DjCas13d sequence lookup, spacer→target reverse-complement derivation, the
+  SpCas9/Azimuth `30mer` parsing rule (protospacer = positions `[4:24]`) and sgRNA
+  scaffold, the direct-repeat sequences per ortholog, and the output-parsing layout.
+  Read it before modifying `generate_yamls.py`.
+- **`boltz/BLAST CasRxd.png`** — SMARTBLAST confirming the CasRx sequence is genuinely
+  type VI-D Cas13d (100% identity) and matches PDB `9M31_A` / `9LZT_B`. See
+  `04_results.md` §4.1; those PDB entries matter for future work.
+
+**Where the results actually live.** Scratch was purged, so the canonical store is a
+**private Hugging Face dataset repo, `yjjunnie/ureca-boltz-data`**, holding
+`results_fullprot/` and `results_balanced/` (plus `data/` and `scripts/`). `06_upload_results.pbs`
+pushes there; `download_results_from_hf.py` pulls back. Everything that repo holds under
+those two prefixes is already copied into [`../results/boltz/`](../results/boltz/) — 4 files
+each, matching the 4 outputs `04_analyze.py` and `04b_analyze_balanced.py` each declare —
+so the handover is complete without needing repo access. **Note the download script maps
+`results_balanced/` to `correlation_results_balanced/`, while the files on disk are at
+`correlation_results/balanced/`; re-running it will create a second directory rather than
+updating the first.**
+
+⚠️ `download_results_from_hf.py` and `upload_to_hf.py` contain a **hardcoded Hugging Face
+token**. It was deliberately not copied into this repo. See `05_next_steps.md` → Known debts.
 
 **Weights.** `boltz2_conf.ckpt` (2.29 GB) and `mols.tar` (1.86 GB) were transferred to
 NSCC manually by `scp -O` — they are *not* auto-downloaded in this setup because compute

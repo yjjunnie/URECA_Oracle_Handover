@@ -94,22 +94,33 @@ check on whether the complexes look remotely plausible.
 
 ## 2. Boltz-2 — first pass (unbalanced)
 
-Source: `boltz/correlation_results/correlations.csv`. 12 metrics × 4 datasets.
+Source: `boltz/correlation_results/correlations.csv` →
+[`../results/boltz/correlations.csv`](../results/boltz/correlations.csv).
+1,296 guides. **The complete 12 metrics × 4 datasets matrix, Spearman ρ:**
 
-Strongest |ρ| anywhere in the table:
-
-| Dataset | Metric | ρ | p | n |
+| Metric | `tiger_fc` (CasRx, n=500) | `tiger_ht` (CasRx, n=200) | `konermann_casrx` (n=96) | `azimuth_v1` (SpCas9, n=500) |
 |---|---|---|---|---|
-| `konermann_casrx` | `iptm_prot_target` | −0.175 | 0.088 | 96 |
-| `konermann_casrx` | `iptm` | −0.140 | 0.17 | 96 |
-| `tiger_fc` | `iptm_grna_target` | 0.127 | **0.0043** | 500 |
-| `tiger_fc` | `ptm_grna` | 0.125 | **0.0052** | 500 |
-| `azimuth_v1` | `ptm_target` | 0.094 | **0.035** | 500 |
-| `tiger_ht` | `complex_plddt` | 0.092 | 0.19 | 200 |
+| `confidence_score` | −0.003 | 0.080 | −0.041 | 0.037 |
+| `ptm` | 0.087 | −0.043 | −0.024 | 0.064 |
+| `iptm` | 0.045 | −0.023 | −0.140 | 0.039 |
+| `complex_plddt` | −0.060 | 0.092 | 0.011 | 0.033 |
+| `complex_iplddt` | −0.037 | 0.070 | 0.030 | 0.046 |
+| `complex_pde` | −0.042 | −0.048 | 0.127 | 0.001 |
+| `complex_ipde` | −0.028 | −0.067 | 0.128 | 0.004 |
+| `ptm_grna` | **0.125** | −0.064 | 0.027 | 0.060 |
+| `ptm_target` | 0.090 | −0.058 | −0.083 | **0.094** |
+| `iptm_prot_grna` | 0.056 | −0.002 | −0.111 | 0.019 |
+| `iptm_grna_target` | **0.127** | −0.067 | −0.041 | 0.084 |
+| `iptm_prot_target` | 0.043 | −0.033 | **−0.175** | 0.031 |
 
-Best per dataset, nothing above |ρ| = 0.18. The handful of significant p-values come
-entirely from the large-*n* datasets — with 48 tests and ρ ≈ 0.12, these are marginal and
-would not survive multiple-comparison correction.
+Bold = the largest |ρ| in that column. Nothing exceeds |ρ| = 0.175, and **only 4 of 48
+tests reach p < 0.05** — about what 48 tests produce by chance. All four come from the
+large-*n* datasets (`tiger_fc` ×3, `azimuth_v1` ×1), which is a power artifact, not a
+signal: `konermann_casrx` has the single largest ρ in the table (−0.175) and is *not*
+significant purely because n = 96.
+
+Note the signs are inconsistent across datasets for the same metric (`complex_plddt`:
+−0.060, +0.092, +0.011, +0.033). A real effect would point the same way in every column.
 
 Caveat: this pass confounds dataset with protein (three of four are CasRx) and has unequal
 *n*, which is why it was redone.
@@ -118,14 +129,26 @@ Caveat: this pass confounds dataset with protein (three of four are CasRx) and h
 
 ## 3. Boltz-2 — balanced re-analysis (the trustworthy one)
 
-Source: `boltz/correlation_results/balanced/correlations_balanced.csv`.
-One dataset per Cas protein, **n = 85 each**, 36 tests.
+Source: `boltz/correlation_results/balanced/correlations_balanced.csv` →
+[`../results/boltz/balanced/`](../results/boltz/balanced/).
+One dataset per Cas protein, **n = 85 each**, 36 tests. **Complete matrix, Spearman ρ:**
 
-| Dataset | Protein | Best metric | ρ | p |
-|---|---|---|---|---|
-| `konermann_djcas13d` | DjCas13d | `confidence_score` | −0.168 | 0.12 |
-| `tiger_fc` | CasRx | `ptm_target` | −0.116 | 0.29 |
-| `azimuth_v1` | SpCas9 | `complex_plddt` | −0.095 | 0.39 |
+| Metric | `tiger_fc` (CasRx) | `konermann_djcas13d` (DjCas13d) | `azimuth_v1` (SpCas9) |
+|---|---|---|---|
+| `confidence_score` | −0.007 | **−0.168** | −0.089 |
+| `ptm` | 0.041 | −0.031 | 0.021 |
+| `iptm` | 0.056 | −0.067 | 0.034 |
+| `complex_plddt` | −0.110 | −0.072 | **−0.095** |
+| `complex_iplddt` | −0.080 | −0.021 | −0.076 |
+| `complex_pde` | 0.025 | −0.003 | −0.008 |
+| `complex_ipde` | −0.058 | 0.070 | −0.024 |
+| `ptm_grna` | −0.009 | −0.079 | 0.071 |
+| `ptm_target` | **−0.116** | 0.113 | 0.084 |
+| `iptm_prot_grna` | 0.065 | −0.065 | 0.026 |
+| `iptm_grna_target` | 0.063 | −0.059 | 0.011 |
+| `iptm_prot_target` | −0.001 | −0.045 | 0.031 |
+
+Largest |ρ| anywhere: **0.168** (`konermann_djcas13d` / `confidence_score`, p = 0.12).
 
 **Not a single significant correlation across all 36 tests.** The marginal `tiger_fc`
 signals from the unbalanced pass **did not replicate** — and note `ptm_target` even flips
@@ -175,6 +198,24 @@ All the small analysis outputs below are also copied into
 | `boltz/correlation_results/correlation_heatmap.png` | ρ heatmap, datasets × metrics |
 | `boltz/correlation_results/scatter_iptm_prot_target.png` | best-metric scatter |
 | `boltz/correlation_results/balanced/*` | the balanced re-analysis (4 files) |
+| `boltz/BLAST CasRxd.png` | SMARTBLAST sequence-provenance check (see §4.1 below) |
+
+### 4.1 Sequence provenance check (Boltz)
+
+`boltz/BLAST CasRxd.png` → [`../results/boltz/BLAST_CasRx_smartblast.png`](../results/boltz/BLAST_CasRx_smartblast.png).
+
+A SMARTBLAST of the CasRx sequence used in the complexes, confirming it is the right
+protein before 1,296 GPU jobs were spent on it:
+
+- **100% identity, 100% query cover, E = 9e−20** to *type VI-D CRISPR-associated
+  RNA-guided ribonuclease Cas13d* [*Ruminococcus* sp. XPD3002] — `WP_075424065.1`
+- 97.92% to the same protein from *Ruminococcus* sp. — `MBR6985772.1`
+- 100% to **PDB `9M31_A` (chain A, CasRx)** and **`9LZT_B` (chain B, RfxCas13d)**
+
+Two things follow. First, the sequence is confirmed correct, so the null result is not a
+wrong-protein artifact. Second — and more useful — **`9M31` and `9LZT` are experimental
+structures of this exact protein.** They are the ready-made ground truth for the
+"are these complexes modellable at all?" question in `05_next_steps.md` §2.2.
 
 ---
 

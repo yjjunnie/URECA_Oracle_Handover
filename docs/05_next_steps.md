@@ -88,10 +88,14 @@ Do it on the TIGER gene-holdout split, not a random split, or you will leak.
 `04_results.md` cannot distinguish "confidence doesn't predict activity" from "AF3 can't
 model these complexes" (pLDDT ≈ 30 for everything). Settle it:
 
-- Fold a Cas13 complex with a **published experimental structure** (several Cas13a/Cas13b
-  cryo-EM structures exist in the PDB) and compare predicted vs actual. If the predictor
-  cannot reproduce a known Cas13 complex, that is the finding, and it fully explains the
-  null result.
+- Fold a Cas13 complex with a **published experimental structure** and compare predicted
+  vs actual. **You already have the entries:** the SMARTBLAST in
+  `boltz/BLAST CasRxd.png` matched the project's CasRx sequence at 100% identity to
+  **PDB `9M31` (chain A, CasRx)** and **`9LZT` (chain B, RfxCas13d)** — experimental
+  structures of the *exact* protein used in every complex. Fold them, compare to the
+  deposited coordinates, and check whether pLDDT is still ~30. If the predictor cannot
+  reproduce a solved structure of this protein, that is the finding, and it fully explains
+  the null result.
 - Check whether pLDDT ≈ 30 persists when the **target RNA chain is removed** (protein +
   crRNA only). Single-stranded target RNA is the least modellable component; if the
   binary complex is confident and the ternary is not, that localises the failure.
@@ -165,6 +169,29 @@ written down. If anyone revisits AF3, this will be re-derived expensively. A sho
 ---
 
 ## Known debts
+
+### ⚠️ Revoke the committed Hugging Face token — do this now
+
+`boltz/download_results_from_hf.py` (line ~27) and `boltz/upload_to_hf.py` both contain a
+**hardcoded Hugging Face access token in plaintext**, granting write access to the private
+dataset repo `yjjunnie/ureca-boltz-data`.
+
+It was deliberately excluded from this handover repo, but it is still sitting in the
+working tree and will be exposed the moment `URECA_Code/boltz/` is shared, published or
+committed anywhere.
+
+1. Revoke it at https://huggingface.co/settings/tokens — assume it is compromised rather
+   than auditing who has seen it.
+2. Issue a replacement and read it from the environment instead:
+   ```python
+   HF_TOKEN = os.environ["HF_TOKEN"]   # never a literal
+   ```
+   On NSCC, export it in the job script from a file outside the repo; locally, set it as a
+   user environment variable.
+3. If `URECA_Code/` is ever put under git, the token is in the working tree *now* — it must
+   be removed before the first commit, not after, since a later deletion still leaves it in
+   history.
+
 
 - Large binaries sitting in the working tree: `boltz2_conf.ckpt` (2.29 GB), `mols.tar`
   (1.86 GB), `af3.bin.zst`, `flash_attn.whl`, `hugging_face.zip`, `tiger_env/`.
