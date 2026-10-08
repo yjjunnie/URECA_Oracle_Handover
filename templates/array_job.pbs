@@ -1,0 +1,103 @@
+#!/bin/bash
+# ============================================================
+# Template: manifest-driven PBS array job
+#
+# Pattern: one TSV manifest lists every work item; each array task
+# slices its own rows by offset. This is how boltz/03_boltz_batch.pbs
+# and alphafold3/my_parts/03_af3_inference_batched.pbs both work.
+#
+# Prerequisites:
+#   1. A smoke test on ONE item has passed (see single_gpu.pbs)
+#   2. A manifest exists with a header and one row per item
+#   3. The -J range below matches the manifest length:
+#          ceil(n_rows / BATCH_SIZE) - 1
+#      Have your input generator PRINT this line rather than
+#      computing it by hand - a stale range silently skips work.
+#
+# Submit:  qsub array_job.pbs
+# Monitor: qstat -J <jobid>
+# Logs:    cat "/scratch/users/ntu/<user>/logs/<jobid>[3].pbs101.OU"
+#          (quote it - the brackets are shell globs)
+# ============================================================
+
+#PBS -N my_array_job
+#PBS -J 0-64
+#PBS -l select=1:ncpus=4:mem=32gb:ngpus=1
+#PBS -l walltime=06:00:00
+#PBS -o /scratch/users/ntu/CHANGEME/logs/
+#PBS -e /scratch/users/ntu/CHANGEME/logs/
+
+# Use -J 0-49%10 to cap concurrency at 10 running tasks.
+
+USER_ID="CHANGEME"
+SCRATCH="/scratch/users/ntu/$USER_ID"
+ENV_PATH="$SCRATCH/envs/myenv"
+MANIFEST="$SCRATCH/inputs/manifest.tsv"
+OUT_DIR="$SCRATCH/outputs"
+BATCH_SIZE=20
+TASK_ID=${PBS_ARRAY_INDEX}
+
+mkdir -p "$SCRATCH/logs" "$OUT_DIR"
+
+echo "=== Array task ${TASK_ID} ==="
+echo "Node:  $(hostname)"
+echo "Start: $(date)"
+
+module purge
+module load python/3.11.7-gcc11
+module load cuda/12.8.1
+source "$ENV_PATH/bin/activate"
+
+export TMPDIR="$SCRATCH/tmp"
+export TRITON_CACHE_DIR="$SCRATCH/triton_cache"
+mkdir -p "$TMPDIR" "$TRITON_CACHE_DIR"
+
+# ── Give this task a PRIVATE input directory ──────────────────
+# Concurrent tasks sharing one input dir will process each other's files.
+BATCH_INPUT="$SCRATCH/tmp/batch_input_${TASK_ID}"
+mkdir -p "$BATCH_INPUT"
+
+python - << PYEOF
+import pandas as pd, shutil, os, sys
+
+manifest = pd.read_csv("$MANIFEST", sep="\t")
+start    = $TASK_ID * $BATCH_SIZE
+batch    = manifest.iloc[start:start + $BATCH_SIZE]
+
+# The final task usually gets fewer rows than BATCH_SIZE; an empty
+# slice is normal completion, not an error.
+if len(batch) == 0:
+    print(f"Task $TASK_ID: no rows at offset {start} - nothing to do.")
+    sys.exit(0)
+
+copied = 0
+for _, row in batch.iterrows():
+    src = row["input_path"]
+    if os.path.exists(src):
+        shutil.copy(src, "$BATCH_INPUT/")
+        copied += 1
+    else:
+        print(f"WARNING: missing input {src}")
+
+print(f"Task $TASK_ID: staged {copied}/{len(batch)} inputs")
+PYEOF
+
+N_INPUTS=$(ls "$BATCH_INPUT"/* 2>/dev/null | wc -l)
+if [ "$N_INPUTS" -eq 0 ]; then
+    echo "No inputs staged - exiting cleanly."
+    exit 0
+fi
+
+# ── Your work here ────────────────────────────────────────────
+echo "Processing ${N_INPUTS} inputs ..."
+
+# boltz predict "$BATCH_INPUT" --out_dir "$OUT_DIR" --cache "$SCRATCH/boltz_cache"
+
+STATUS=$?
+echo ""
+echo "Exit status: $STATUS"
+echo "Done: $(date)"
+
+# Clean up this task's staging dir so scratch does not fill up.
+rm -rf "$BATCH_INPUT"
+exit $STATUS

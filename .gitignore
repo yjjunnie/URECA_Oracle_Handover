@@ -1,0 +1,38 @@
+# Model weights and large binaries - re-obtain from source, never commit
+*.ckpt
+*.sif
+*.bin.zst
+*.whl
+*.pt
+*.pth
+*.safetensors
+*.tar
+*.tar.gz
+mols/
+
+# Environments
+tiger_env/
+*_env/
+venv/
+.venv/
+envs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Cluster logs and scratch artifacts
+logs/
+*.out
+*.err
+*.OU
+*.ER
+*.log
+nul
+
+# Windows
+desktop.ini
+Thumbs.db
+.vscode/

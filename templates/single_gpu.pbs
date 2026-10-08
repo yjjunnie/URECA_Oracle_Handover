@@ -1,0 +1,76 @@
+#!/bin/bash
+# ============================================================
+# Template: single GPU job on NSCC ASPIRE (PBS Pro)
+#
+# Before submitting:
+#   1. Set USER_ID and SCRATCH below
+#   2. mkdir -p $SCRATCH/logs          <-- job dies silently without this
+#   3. Change the -o / -e paths to match
+#
+# Submit:  qsub single_gpu.pbs
+# Monitor: qstat -u $USER
+# Logs:    cat /scratch/users/ntu/<user>/logs/mygpu.out
+# ============================================================
+
+#PBS -N my_gpu_job
+#PBS -l select=1:ncpus=8:mem=64gb:ngpus=1
+#PBS -l walltime=06:00:00
+#PBS -o /scratch/users/ntu/CHANGEME/logs/mygpu.out
+#PBS -e /scratch/users/ntu/CHANGEME/logs/mygpu.err
+
+set -e
+
+USER_ID="CHANGEME"
+SCRATCH="/scratch/users/ntu/$USER_ID"
+ENV_PATH="$SCRATCH/envs/myenv"
+
+mkdir -p "$SCRATCH/logs"
+
+echo "=== $PBS_JOBNAME ==="
+echo "Start: $(date)"
+echo "Node:  $(hostname)"
+echo ""
+
+# ── GPU present? ─────────────────────────────────────────────
+nvidia-smi || echo "WARNING: nvidia-smi unavailable - did you ask for ngpus=1?"
+
+# ── Environment ──────────────────────────────────────────────
+module purge
+module load python/3.11.7-gcc11
+module load cuda/12.8.1
+
+source "$ENV_PATH/bin/activate"
+
+# ── Redirect ALL caches to scratch ───────────────────────────
+# Defaults live under /var/tmp or $HOME and will hit quota mid-job.
+export TMPDIR="$SCRATCH/tmp"
+export PIP_CACHE_DIR="$SCRATCH/pip_cache"
+export TRITON_CACHE_DIR="$SCRATCH/triton_cache"
+export TORCH_HOME="$SCRATCH/torch_hub"
+export HF_HOME="$SCRATCH/hf_cache"
+mkdir -p "$TMPDIR" "$PIP_CACHE_DIR" "$TRITON_CACHE_DIR" "$TORCH_HOME" "$HF_HOME"
+
+# ── Verify torch actually sees the GPU ───────────────────────
+python - << 'PYCHECK'
+import torch
+print(f"torch:          {torch.__version__}")
+print(f"cuda available: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"torch cuda:     {torch.version.cuda}")
+    print(f"gpu:            {torch.cuda.get_device_name(0)}")
+else:
+    raise SystemExit("torch cannot see the GPU - reinstall torch against the "
+                     "CUDA version nvidia-smi reports above")
+PYCHECK
+
+# ── Your work here ───────────────────────────────────────────
+echo ""
+echo "=== Running ==="
+
+# python "$SCRATCH/my_script.py"
+
+STATUS=$?
+echo ""
+echo "Exit status: $STATUS"
+echo "Done: $(date)"
+exit $STATUS

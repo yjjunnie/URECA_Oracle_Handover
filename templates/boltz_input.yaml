@@ -1,0 +1,40 @@
+# Boltz-2 input: Cas13d ternary complex
+#
+# Chain layout used throughout this project - keep it consistent or the
+# per-chain metrics in 04_analyze.py will be mislabelled:
+#   A = Cas13d protein   (CasRx/RfxCas13d, 967 aa; DjCas13d, 877 aa)
+#   B = crRNA            (30 nt direct repeat + 23 nt spacer)
+#   C = target RNA       (23 nt, reverse complement of the spacer)
+#
+# The protein sequence below is TRUNCATED for a smoke test. Real runs must
+# use the full-length sequence from
+# "[Konermann 2023] Cas13d ortholog sequences.csv" - the truncated stub
+# will fold into nonsense.
+#
+# Generate these programmatically, one per guide, plus a manifest.tsv
+# (guide_id / yaml_path / activity). See boltz/generate_yamls.py.
+#
+# Run:
+#   boltz predict input.yaml \
+#       --out_dir "$SCRATCH/boltz_out" \
+#       --cache   "$SCRATCH/boltz_cache" \
+#       --recycling_steps 3 \
+#       --diffusion_samples 1
+#
+# Both sampling parameters are at their minimum here. Raise them if you are
+# investigating the low-confidence problem (see docs/04_results.md).
+#
+# --use_msa_server needs outbound internet, which compute nodes do not have.
+# Use it only on a login node, or pre-compute MSAs.
+
+version: 1
+sequences:
+  - protein:
+      id: A
+      sequence: "MASTKVNLPYLQNLKEQRFIEELLKQHQG"   # TRUNCATED - replace
+  - rna:
+      id: B
+      sequence: "AACCCCUACCAACUGGUCGGGGUUUGAAACGUACGGAGUAAGAGACGUAAGUG"
+  - rna:
+      id: C
+      sequence: "CACUUACGUCUCUUACUCCGUAC"
