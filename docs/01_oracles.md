@@ -97,14 +97,33 @@ Full matrices in `04_results.md` §2–3. Results in `boltz/correlation_results/
 
 **Where the results actually live.** Scratch was purged, so the canonical store is a
 **private Hugging Face dataset repo, `yjjunnie/ureca-boltz-data`**, holding
-`results_fullprot/` and `results_balanced/` (plus `data/` and `scripts/`). `06_upload_results.pbs`
-pushes there; `download_results_from_hf.py` pulls back. Everything that repo holds under
-those two prefixes is already copied into [`../results/boltz/`](../results/boltz/) — 4 files
-each, matching the 4 outputs `04_analyze.py` and `04b_analyze_balanced.py` each declare —
-so the handover is complete without needing repo access. **Note the download script maps
-`results_balanced/` to `correlation_results_balanced/`, while the files on disk are at
-`correlation_results/balanced/`; re-running it will create a second directory rather than
-updating the first.**
+`results_fullprot/` and `results_balanced/` (plus `data/` and `scripts/`).
+`06_upload_results.pbs` pushes there; `download_results_from_hf.py` pulls back.
+
+On disk, the two prefixes landed as:
+
+| HF prefix | Local path |
+|---|---|
+| `results_fullprot/` | `boltz/correlation_results/` |
+| `results_balanced/` | **`boltz/correlation_results/balanced/`** |
+
+Both are copied into [`../results/boltz/`](../results/boltz/) and
+[`../results/boltz/balanced/`](../results/boltz/balanced/) — 4 files each, matching the 4
+outputs `04_analyze.py` and `04b_analyze_balanced.py` each declare — so the handover is
+complete without needing repo access.
+
+⚠️ **The download script's path mapping does not match the layout above.**
+`download_results_from_hf.py` sets `DEST_DIRS["results_balanced"]` to
+`correlation_results_balanced/` (a sibling), not `correlation_results/balanced/` (a
+subdirectory). Re-running it as written will create a second, parallel directory instead of
+refreshing the balanced results in place. Fix the mapping before re-running:
+
+```python
+DEST_DIRS = {
+    "results_fullprot": os.path.join(BASE, "correlation_results"),
+    "results_balanced": os.path.join(BASE, "correlation_results", "balanced"),
+}
+```
 
 ⚠️ `download_results_from_hf.py` and `upload_to_hf.py` contain a **hardcoded Hugging Face
 token**. It was deliberately not copied into this repo. See `05_next_steps.md` → Known debts.

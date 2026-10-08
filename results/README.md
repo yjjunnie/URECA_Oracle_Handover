@@ -51,6 +51,7 @@ alphafold3/                            from alphafold3/my_parts/results/results/
 - Nothing else. The Boltz set here is complete: `04_analyze.py` and
   `04b_analyze_balanced.py` each declare exactly 4 outputs, and all 8 are present. The
   private HF dataset repo `yjjunnie/ureca-boltz-data` holds the same files under
-  `results_fullprot/` and `results_balanced/`, so no repo access is needed to read this
+  `results_fullprot/` (-> `boltz/correlation_results/`) and `results_balanced/`
+  (-> `boltz/correlation_results/balanced/`), so no repo access is needed to read this
   handover. Its access token is **not** reproduced here - see
   `docs/05_next_steps.md` -> Known debts.
