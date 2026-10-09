@@ -23,7 +23,7 @@ if not hasattr(pd.core.indexes, 'numeric'):
     sys.modules['pandas.core.indexes.numeric'] = NumericCompat()
 
 # Load the pickle file
-pkl_path = r'c:\Users\holly\Downloads\tiger-main\tiger_full\off-target\feature-groups-cumulative\no_indels\targets\predictions.pkl'
+pkl_path = r'<PATH_TO_PROJECT>\tiger-main\tiger_full\off-target\feature-groups-cumulative\no_indels\targets\predictions.pkl'
 
 print("Loading pickle file...")
 with open(pkl_path, 'rb') as f:

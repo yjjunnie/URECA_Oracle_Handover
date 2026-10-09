@@ -2,8 +2,8 @@
 #PBS -N fill_casrx
 #PBS -l select=1:ncpus=2:mem=8gb
 #PBS -l walltime=00:30:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/fill_casrx.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/fill_casrx.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/fill_casrx.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/fill_casrx.err
 #PBS -P your_project_code
 
 # ============================================================
@@ -21,7 +21,7 @@ echo "Start: $(date)"
 echo "Node: $(hostname)"
 
 # ── Edit these paths ────────────────────────────────────────
-JSON_DIR="/scratch/users/ntu/hzhang08/af3_inputs"
+JSON_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_inputs"
 SCRIPT="$HOME/fill_casrx_sequence.py"
 # ────────────────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ source ~/miniconda3/bin/activate base
 if [ ! -d "$JSON_DIR" ]; then
     echo "ERROR: JSON directory not found: $JSON_DIR"
     echo "Transfer JSON files first:"
-    echo "  scp -r /local/af3_inputs_v2/ hzhang08@ntu.nscc.sg:$SCRATCH/af3_inputs/"
+    echo "  scp -r /local/af3_inputs_v2/ <YOUR_NSCC_ID>@ntu.nscc.sg:$SCRATCH/af3_inputs/"
     exit 1
 fi
 

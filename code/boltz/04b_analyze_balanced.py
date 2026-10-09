@@ -27,7 +27,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-SCRATCH     = "/scratch/users/ntu/hzhang08"
+SCRATCH     = "/scratch/users/ntu/<YOUR_NSCC_ID>"
 MANIFEST    = f"{SCRATCH}/yamls_fullprot/manifest.tsv"
 BOLTZ_OUT   = f"{SCRATCH}/boltz_out_fullprot"
 RESULTS_DIR = f"{SCRATCH}/boltz_analysis_results_balanced"

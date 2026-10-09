@@ -2,8 +2,8 @@
 #PBS -N af3_msa_test
 #PBS -l select=1:ncpus=8:mem=64gb:ngpus=1
 #PBS -l walltime=04:00:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/af3_msa_test.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/af3_msa_test.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/af3_msa_test.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/af3_msa_test.err
 
 # ============================================================
 # VALIDATION RUN — custom MSA, 3 jobs only
@@ -35,11 +35,11 @@ echo "Node:  $(hostname)"
 nvidia-smi 2>/dev/null || echo "WARNING: nvidia-smi not available"
 
 # ── Paths ─────────────────────────────────────────────────────
-AF3_SIF="/scratch/users/ntu/hzhang08/alphafold3.sif"
-AF3_WEIGHTS="/scratch/users/ntu/hzhang08/af3_weights"
-INPUT_DIR="/scratch/users/ntu/hzhang08/af3_inputs_flowcyt"
-OUTPUT_DIR="/scratch/users/ntu/hzhang08/af3_outputs_msatest"
-JAX_CACHE="/scratch/users/ntu/hzhang08/jax_cache"
+AF3_SIF="/scratch/users/ntu/<YOUR_NSCC_ID>/alphafold3.sif"
+AF3_WEIGHTS="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_weights"
+INPUT_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_inputs_flowcyt"
+OUTPUT_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_outputs_msatest"
+JAX_CACHE="/scratch/users/ntu/<YOUR_NSCC_ID>/jax_cache"
 #
 # No AF3_DB / --db_dir here on purpose. run_alphafold.py resolves every
 # database path inside `if _RUN_DATA_PIPELINE.value:` (line ~911), so with
@@ -56,8 +56,8 @@ if [ $MISSING -ne 0 ]; then
     echo ""
     echo "NSCC scratch is purged periodically and the previous run was ~6 months ago,"
     echo "so these were most likely deleted. Locate or restore them before resubmitting:"
-    echo "  find /scratch/users/ntu/hzhang08 \$HOME -maxdepth 3 -name '*.sif' 2>/dev/null"
-    echo "  ls -la /scratch/users/ntu/hzhang08/af3_weights/ 2>/dev/null"
+    echo "  find /scratch/users/ntu/<YOUR_NSCC_ID> \$HOME -maxdepth 3 -name '*.sif' 2>/dev/null"
+    echo "  ls -la /scratch/users/ntu/<YOUR_NSCC_ID>/af3_weights/ 2>/dev/null"
     exit 1
 fi
 
@@ -129,7 +129,7 @@ python3 - <<'PYEOF'
 import glob, json, os
 import statistics as st
 
-out = os.environ.get("OUTPUT_DIR", "/scratch/users/ntu/hzhang08/af3_outputs_msatest")
+out = os.environ.get("OUTPUT_DIR", "/scratch/users/ntu/<YOUR_NSCC_ID>/af3_outputs_msatest")
 rows = []
 for sc in sorted(glob.glob(os.path.join(out, "*", "*summary_confidences*.json"))):
     d = json.load(open(sc))

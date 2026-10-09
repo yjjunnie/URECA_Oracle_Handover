@@ -15,20 +15,20 @@
 #   qsub 03_boltz_batch.pbs
 #
 # Monitor:
-#   qstat -u hzhang08
+#   qstat -u <YOUR_NSCC_ID>
 #   qstat -J <jobid>                         # summary of array
-#   cat "/scratch/users/ntu/hzhang08/logs/<jobid>[<index>].pbs101.OU"   # stdout
-#   cat "/scratch/users/ntu/hzhang08/logs/<jobid>[<index>].pbs101.ER"   # stderr
+#   cat "/scratch/users/ntu/<YOUR_NSCC_ID>/logs/<jobid>[<index>].pbs101.OU"   # stdout
+#   cat "/scratch/users/ntu/<YOUR_NSCC_ID>/logs/<jobid>[<index>].pbs101.ER"   # stderr
 # ============================================================
 
 #PBS -N boltz_batch
 #PBS -J 0-64
 #PBS -l select=1:ncpus=4:mem=32gb:ngpus=1
 #PBS -l walltime=06:00:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/
-#PBS -e /scratch/users/ntu/hzhang08/logs/
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/
 
-SCRATCH="/scratch/users/ntu/hzhang08"
+SCRATCH="/scratch/users/ntu/<YOUR_NSCC_ID>"
 ENV_PATH="$SCRATCH/envs/boltz"
 BOLTZ_CACHE="$SCRATCH/boltz_cache"
 MANIFEST="$SCRATCH/yamls_fullprot/manifest.tsv"

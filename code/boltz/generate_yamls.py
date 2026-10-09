@@ -23,7 +23,7 @@ import yaml
 import pandas as pd
 import numpy as np
 
-SCRATCH    = "/scratch/users/ntu/hzhang08"
+SCRATCH    = "/scratch/users/ntu/<YOUR_NSCC_ID>"
 DATA_DIR   = f"{SCRATCH}/data"
 YAML_DIR   = f"{SCRATCH}/yamls_fullprot"
 MANIFEST   = f"{SCRATCH}/yamls_fullprot/manifest.tsv"

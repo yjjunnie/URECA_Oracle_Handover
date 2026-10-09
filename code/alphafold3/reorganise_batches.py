@@ -17,7 +17,7 @@ Usage:
     python3 reorganise_batches.py
 
 Creates:
-    /scratch/users/ntu/hzhang08/af3_inputs_batched/
+    /scratch/users/ntu/<YOUR_NSCC_ID>/af3_inputs_batched/
         batch_00/   <- 10 JSONs (indices 0-9)
         batch_01/   <- 10 JSONs (indices 10-19)
         ...
@@ -29,8 +29,8 @@ import shutil
 import glob
 
 # Paths
-AF3_INPUT     = "/scratch/users/ntu/hzhang08/af3_inputs"
-BATCHED_INPUT = "/scratch/users/ntu/hzhang08/af3_inputs_batched"
+AF3_INPUT     = "/scratch/users/ntu/<YOUR_NSCC_ID>/af3_inputs"
+BATCHED_INPUT = "/scratch/users/ntu/<YOUR_NSCC_ID>/af3_inputs_batched"
 BATCH_SIZE    = 10
 
 # Get sorted list of all JSONs

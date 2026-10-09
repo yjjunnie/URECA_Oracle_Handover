@@ -20,7 +20,7 @@ HF_TOKEN  = os.environ["HF_TOKEN"]  # was hardcoded; read from env instead
 HF_REPO   = "yjjunnie/ureca-boltz-data"
 # ──────────────────────────────────────────────────────────────────────────────
 
-BASE = r"c:\Users\holly\Documents\Documents\URECA_Code"
+BASE = r"<PATH_TO_PROJECT>"
 
 FILES = {
     # local path  →  path inside HF repo

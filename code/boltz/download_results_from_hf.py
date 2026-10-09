@@ -20,7 +20,7 @@ from huggingface_hub import HfApi, hf_hub_download
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 HF_TOKEN = os.environ["HF_TOKEN"]  # was hardcoded; read from env instead
 HF_REPO  = "yjjunnie/ureca-boltz-data"
-BASE     = r"c:\Users\holly\Documents\Documents\URECA_Code\boltz"
+BASE     = r"<PATH_TO_PROJECT>\boltz"
 # ──────────────────────────────────────────────────────────────────────────────
 
 DEST_DIRS = {

@@ -4,7 +4,7 @@ Download Boltz-2 data + scripts from HuggingFace onto NSCC.
 
 Copy this file to NSCC and run:
   module load python/3.11.7-gcc11
-  source /scratch/users/ntu/hzhang08/envs/boltz/bin/activate
+  source /scratch/users/ntu/<YOUR_NSCC_ID>/envs/boltz/bin/activate
   python download_from_hf.py
 
 Or paste the two lines below directly in the NSCC terminal
@@ -17,7 +17,7 @@ from huggingface_hub import hf_hub_download
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 HF_TOKEN = os.environ["HF_TOKEN"]  # was hardcoded; read from env instead
 HF_REPO  = "yjjunnie/ureca-boltz-data"
-SCRATCH  = "/scratch/users/ntu/hzhang08"
+SCRATCH  = "/scratch/users/ntu/<YOUR_NSCC_ID>"
 # ──────────────────────────────────────────────────────────────────────────────
 
 REPO_FILES = [
@@ -53,4 +53,4 @@ for repo_path, dest_path in REPO_FILES:
     print(f"  → {dest_path}", flush=True)
 
 print("\nAll files downloaded. Next:")
-print("  python /scratch/users/ntu/hzhang08/generate_yamls.py")
+print("  python /scratch/users/ntu/<YOUR_NSCC_ID>/generate_yamls.py")

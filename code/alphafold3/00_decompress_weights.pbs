@@ -2,8 +2,8 @@
 #PBS -N decompress_weights
 #PBS -l select=1:ncpus=4:mem=16gb
 #PBS -l walltime=02:00:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/decompress_weights.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/decompress_weights.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/decompress_weights.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/decompress_weights.err
 
 # ============================================================
 # Job 0 of 4: Decompress AF3 model weights
@@ -20,8 +20,8 @@ echo "Node:  $(hostname)"
 
 mkdir -p $HOME/logs
 # ── Edit these paths ─────────────────────────────────────────
-WEIGHTS_ZST="/scratch/users/ntu/hzhang08/af3.bin.zst"                     # path to your .bin.zst file
-WEIGHTS_DIR="/scratch/users/ntu/hzhang08/af3_weights"                     # destination folder
+WEIGHTS_ZST="/scratch/users/ntu/<YOUR_NSCC_ID>/af3.bin.zst"                     # path to your .bin.zst file
+WEIGHTS_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_weights"                     # destination folder
 # ─────────────────────────────────────────────────────────────
 
 # Check source file exists

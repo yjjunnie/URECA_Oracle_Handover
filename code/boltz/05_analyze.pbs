@@ -2,10 +2,10 @@
 #PBS -N boltz_analyze
 #PBS -l select=1:ncpus=2:mem=16gb
 #PBS -l walltime=00:30:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/analyze.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/analyze.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/analyze.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/analyze.err
 
-SCRATCH="/scratch/users/ntu/hzhang08"
+SCRATCH="/scratch/users/ntu/<YOUR_NSCC_ID>"
 ENV_PATH="$SCRATCH/envs/analysis"   # CPU-only venv, separate from the GPU boltz venv
 
 mkdir -p "$SCRATCH/logs" "$SCRATCH/boltz_analysis_results_fullprot"

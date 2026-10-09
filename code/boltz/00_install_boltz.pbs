@@ -2,8 +2,8 @@
 #PBS -N install_boltz
 #PBS -l select=1:ncpus=8:mem=32gb
 #PBS -l walltime=01:00:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/install_boltz.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/install_boltz.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/install_boltz.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/install_boltz.err
 
 # ============================================================
 # Install Boltz-2 (code only via pip).
@@ -19,12 +19,12 @@
 #   4. Verifies both weight files are present
 #
 # Submit with: qsub 00_install_boltz.pbs
-# Check logs:  cat /scratch/users/ntu/hzhang08/logs/install_boltz.out
+# Check logs:  cat /scratch/users/ntu/<YOUR_NSCC_ID>/logs/install_boltz.out
 # ============================================================
 
 set -e
 
-SCRATCH="/scratch/users/ntu/hzhang08"
+SCRATCH="/scratch/users/ntu/<YOUR_NSCC_ID>"
 ENV_PATH="$SCRATCH/envs/boltz"
 BOLTZ_CACHE="$SCRATCH/boltz_cache"
 
@@ -55,8 +55,8 @@ if [ $MISSING -gt 0 ]; then
     echo ""
     echo "ERROR: $MISSING weight file(s) missing from $BOLTZ_CACHE"
     echo "Transfer them first from your Windows machine:"
-    echo "  scp -O boltz2_conf.ckpt hzhang08@aspire2.nscc.sg:$BOLTZ_CACHE/"
-    echo "  scp -O mols.tar         hzhang08@aspire2.nscc.sg:$BOLTZ_CACHE/"
+    echo "  scp -O boltz2_conf.ckpt <YOUR_NSCC_ID>@aspire2.nscc.sg:$BOLTZ_CACHE/"
+    echo "  scp -O mols.tar         <YOUR_NSCC_ID>@aspire2.nscc.sg:$BOLTZ_CACHE/"
     exit 1
 fi
 

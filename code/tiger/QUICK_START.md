@@ -24,12 +24,12 @@ You have Python 3.11, but TIGER needs Python 3.9. Here's how to get started quic
 ## Step 2: Run Automated Installation
 
 ### Option A: Double-click the installer
-1. Go to: `c:\Users\holly\Downloads\tiger-main\tiger-main`
+1. Go to: `<PATH_TO_PROJECT>\tiger-main\tiger-main`
 2. Double-click: **`install_with_venv.bat`**
 
 ### Option B: Run from Command Prompt
 ```bash
-cd c:\Users\holly\Downloads\tiger-main\tiger-main
+cd <PATH_TO_PROJECT>\tiger-main\tiger-main
 install_with_venv.bat
 ```
 
@@ -64,7 +64,7 @@ The script will automatically run verification. You should see:
 1. **Open Command Prompt**
 2. **Navigate to project:**
    ```bash
-   cd c:\Users\holly\Downloads\tiger-main\tiger-main
+   cd <PATH_TO_PROJECT>\tiger-main\tiger-main
    ```
 3. **Activate virtual environment:**
    ```bash
@@ -103,7 +103,7 @@ py -3.9 -m venv tiger_env
 
 **Solution 2 - Manual installation:**
 ```bash
-cd c:\Users\holly\Downloads\tiger-main\tiger-main
+cd <PATH_TO_PROJECT>\tiger-main\tiger-main
 py -3.9 -m venv tiger_env
 tiger_env\Scripts\activate
 pip install -r requirements.txt
@@ -115,7 +115,7 @@ pip install -r requirements.txt
 
 **Activate environment:**
 ```bash
-cd c:\Users\holly\Downloads\tiger-main\tiger-main
+cd <PATH_TO_PROJECT>\tiger-main\tiger-main
 tiger_env\Scripts\activate
 ```
 

@@ -22,15 +22,15 @@ If not installed: Settings → Apps → Optional Features → Add "OpenSSH Clien
 ### 1. Connect to NSCC
 
 ```powershell
-ssh your_username@aspire.nscc.sg
+ssh <YOUR_NSCC_ID>@aspire.nscc.sg
 ```
 
 ### 2. Upload Code to NSCC
 
 **Option A: Upload from Windows (PowerShell)**
 ```powershell
-cd "c:\Users\holly\Documents\Documents"
-scp -r progen3-main your_username@aspire.nscc.sg:~/
+cd "<PATH_TO_PROJECT>\Documents\Documents"
+scp -r progen3-main <YOUR_NSCC_ID>@aspire.nscc.sg:~/
 ```
 
 **Option B: Clone from GitHub (recommended)**
@@ -153,7 +153,7 @@ qsub nscc_setup.sh
 
 Monitor setup (~30-60 minutes):
 ```bash
-qstat -u your_username
+qstat -u <YOUR_NSCC_ID>
 tail -f setup.log
 ```
 
@@ -176,7 +176,7 @@ Save: `Ctrl+O`, `Enter`, `Ctrl+X`
 
 **Option B: Upload from Windows**
 ```powershell
-scp my_sequences.fasta your_username@aspire.nscc.sg:~/progen3-main/
+scp my_sequences.fasta <YOUR_NSCC_ID>@aspire.nscc.sg:~/progen3-main/
 ```
 
 ### 6. Configure Scoring Job
@@ -210,7 +210,7 @@ qsub nscc_score_job.sh
 
 ```bash
 # Check status
-qstat -u your_username
+qstat -u <YOUR_NSCC_ID>
 
 # Watch log
 tail -f score.log
@@ -231,7 +231,7 @@ cat scores.csv
 **Download to Windows:**
 ```powershell
 # From PowerShell on Windows
-scp your_username@aspire.nscc.sg:~/progen3-main/scores.csv .
+scp <YOUR_NSCC_ID>@aspire.nscc.sg:~/progen3-main/scores.csv .
 ```
 
 **Output Format:**
@@ -253,7 +253,7 @@ seq_2,-52.897,2.56e11
 qsub nscc_score_job.sh
 
 # Check status
-qstat -u your_username
+qstat -u <YOUR_NSCC_ID>
 
 # Job details
 qstat -f <job_id>
@@ -274,16 +274,16 @@ qsub -I -l select=1:ncpus=8:mem=64gb:ngpus=1 -l walltime=2:00:00
 
 ```powershell
 # Upload single file
-scp my_file.fasta your_username@aspire.nscc.sg:~/progen3-main/
+scp my_file.fasta <YOUR_NSCC_ID>@aspire.nscc.sg:~/progen3-main/
 
 # Upload directory
-scp -r progen3-main your_username@aspire.nscc.sg:~/
+scp -r progen3-main <YOUR_NSCC_ID>@aspire.nscc.sg:~/
 
 # Download single file
-scp your_username@aspire.nscc.sg:~/progen3-main/scores.csv .
+scp <YOUR_NSCC_ID>@aspire.nscc.sg:~/progen3-main/scores.csv .
 
 # Download directory
-scp -r your_username@aspire.nscc.sg:~/progen3-main/results .
+scp -r <YOUR_NSCC_ID>@aspire.nscc.sg:~/progen3-main/results .
 ```
 
 ---

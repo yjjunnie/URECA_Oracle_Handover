@@ -2,8 +2,8 @@
 #PBS -N af3_analyze
 #PBS -l select=1:ncpus=4:mem=16gb
 #PBS -l walltime=01:00:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/analyze.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/analyze.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/analyze.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/analyze.err
 
 # ============================================================
 # Job 4 of 4: Parse AF3 outputs and compute correlations
@@ -22,9 +22,9 @@ echo "=== AF3 Analysis ==="
 echo "Start: $(date)"
 
 # ── Edit these paths ────────────────────────────────────────
-AF3_OUTPUT_FINAL="/scratch/users/ntu/hzhang08/af3_outputs_final"
-METADATA="/scratch/users/ntu/hzhang08/af3_v2_metadata.csv"
-RESULTS_DIR="/scratch/users/ntu/hzhang08/results"
+AF3_OUTPUT_FINAL="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_outputs_final"
+METADATA="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_v2_metadata.csv"
+RESULTS_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/results"
 SCRIPT="$HOME/analyze_af3_results.py"
 # ────────────────────────────────────────────────────────────
 

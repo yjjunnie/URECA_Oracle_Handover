@@ -8,11 +8,11 @@ Designed to run inside a PBS job on NSCC — no login node interaction needed.
 Uses only standard library (urllib) — no conda/pip installs required.
 
 Usage:
-    python fill_casrx_sequence.py --json_dir /scratch/users/hzhang08/af3_inputs/
+    python fill_casrx_sequence.py --json_dir /scratch/users/ntu/<YOUR_NSCC_ID>/af3_inputs/
 
     # Or if UniProt is unreachable, supply a local FASTA:
-    python fill_casrx_sequence.py --json_dir /scratch/users/hzhang08/af3_inputs/ \
-                                  --fasta_file /scratch/users/hzhang08/casrx.fasta
+    python fill_casrx_sequence.py --json_dir /scratch/users/ntu/<YOUR_NSCC_ID>/af3_inputs/ \
+                                  --fasta_file /scratch/users/ntu/<YOUR_NSCC_ID>/casrx.fasta
 
 RfxCas13d identity:
     - Full name: Ruminococcus flavefaciens XPD3002 Cas13d

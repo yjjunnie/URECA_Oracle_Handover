@@ -2,8 +2,8 @@
 #PBS -N boltz_test
 #PBS -l select=1:ncpus=8:mem=64gb:ngpus=1
 #PBS -l walltime=00:30:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/boltz_test.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/boltz_test.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/boltz_test.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/boltz_test.err
 
 # ============================================================
 # Test Boltz on a real GPU node using a minimal Cas13 complex.
@@ -17,10 +17,10 @@
 #   4. Prints confidence JSON key names — needed before writing parser
 #
 # Submit with: qsub 01_test_boltz.pbs
-# Check logs:  cat /scratch/users/ntu/hzhang08/logs/boltz_test.out
+# Check logs:  cat /scratch/users/ntu/<YOUR_NSCC_ID>/logs/boltz_test.out
 # ============================================================
 
-SCRATCH="/scratch/users/ntu/hzhang08"
+SCRATCH="/scratch/users/ntu/<YOUR_NSCC_ID>"
 ENV_PATH="$SCRATCH/envs/boltz"
 BOLTZ_CACHE="$SCRATCH/boltz_cache"
 TEST_OUT="$SCRATCH/boltz_test_out"

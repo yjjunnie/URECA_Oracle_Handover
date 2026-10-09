@@ -2,8 +2,8 @@
 #PBS -N af3_native_test
 #PBS -l select=1:ncpus=8:mem=64gb:ngpus=1
 #PBS -l walltime=04:00:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/af3_native_test.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/af3_native_test.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/af3_native_test.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/af3_native_test.err
 
 # ============================================================
 # VALIDATION RUN — native install, custom MSA, 3 jobs only
@@ -40,10 +40,10 @@ nvidia-smi 2>/dev/null || echo "WARNING: nvidia-smi not available"
 
 # ── Paths ─────────────────────────────────────────────────────
 ENV_NAME="af3"
-SRC_DIR="/scratch/users/ntu/hzhang08/alphafold3_src"
-AF3_WEIGHTS="/scratch/users/ntu/hzhang08/af3_weights"
-INPUT_DIR="/scratch/users/ntu/hzhang08/af3_inputs_flowcyt"
-OUTPUT_DIR="/scratch/users/ntu/hzhang08/af3_outputs_msatest"
+SRC_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/alphafold3_src"
+AF3_WEIGHTS="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_weights"
+INPUT_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_inputs_flowcyt"
+OUTPUT_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_outputs_msatest"
 # ──────────────────────────────────────────────────────────────
 
 TEST_JOBS=(

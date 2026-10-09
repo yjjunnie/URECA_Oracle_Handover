@@ -20,7 +20,7 @@ This is the fastest and most reliable method:
 
 ```bash
 # Navigate to the project directory
-cd c:\Users\holly\Downloads\tiger-main\tiger-main
+cd <PATH_TO_PROJECT>\tiger-main\tiger-main
 
 # Install all dependencies at once
 pip install -r requirements.txt
@@ -83,7 +83,7 @@ Using a virtual environment prevents conflicts with other Python projects:
 
 ```bash
 # Navigate to project directory
-cd c:\Users\holly\Downloads\tiger-main\tiger-main
+cd <PATH_TO_PROJECT>\tiger-main\tiger-main
 
 # Create virtual environment
 python -m venv tiger_env
@@ -387,13 +387,13 @@ pip install statsmodels==0.13.5
 
 **Quick Install (Recommended):**
 ```bash
-cd c:\Users\holly\Downloads\tiger-main\tiger-main
+cd <PATH_TO_PROJECT>\tiger-main\tiger-main
 pip install -r requirements.txt
 ```
 
 **With Virtual Environment:**
 ```bash
-cd c:\Users\holly\Downloads\tiger-main\tiger-main
+cd <PATH_TO_PROJECT>\tiger-main\tiger-main
 python -m venv tiger_env
 tiger_env\Scripts\activate  # On Windows
 pip install -r requirements.txt

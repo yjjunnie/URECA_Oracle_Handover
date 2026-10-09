@@ -1,3 +1,12 @@
+# NOTE: This is the version that actually produced the committed results in
+# results/alphafold3/. It was recovered from write_analyze_final.pbs, a job that
+# wrote it to disk via heredoc. An alternative refactor existed alongside it but
+# was broken: it merged on a "quartile" column while plotting on "quintile", and
+# it parsed chain_pair_iptm as a dict of dicts when AF3 emits a 2D array, so it
+# produced no chain_iptm_* values. That refactor did contain one unfinished good
+# idea - partial correlation against SEVERAL baselines jointly, not one at a time.
+# Worth redoing if you extend this.
+
 """
 analyze_af3_results.py
 ======================
@@ -9,9 +18,9 @@ Run after AF3 inference jobs are complete on NSCC.
 
 Usage:
     python analyze_af3_results.py \
-        --af3_dir   /scratch/users/hzhang08/af3_outputs_final \
-        --metadata  /scratch/users/hzhang08/tiger_af3_full_complex_sample.csv \
-        --output_dir /scratch/users/hzhang08/results/
+        --af3_dir   /scratch/users/ntu/<YOUR_NSCC_ID>/af3_outputs_final \
+        --metadata  /scratch/users/ntu/<YOUR_NSCC_ID>/tiger_af3_full_complex_sample.csv \
+        --output_dir /scratch/users/ntu/<YOUR_NSCC_ID>/results/
 
 Output files:
     af3_lfc_merged.csv       - merged AF3 scores + LFC values per guide
@@ -66,10 +75,10 @@ try:
     HAS_PLOT = True
 except ImportError:
     HAS_PLOT = False
-    print("matplotlib not available — skipping plots (install with: pip install matplotlib)")
+    print("matplotlib not available - skipping plots (install with: pip install matplotlib)")
 
 
-# ── Constants ─────────────────────────────────────────────────────────────────
+# - Constants -
 
 # Chain assignments (as defined in af3_inputs_v2 JSONs)
 CHAIN_PROTEIN = "A"   # RfxCas13d
@@ -80,7 +89,7 @@ DR_LENGTH     = 30    # direct repeat nucleotides in chain B
 SPACER_LENGTH = 23    # spacer nucleotides in chain B (positions 31-53)
 
 
-# ── Parsing ───────────────────────────────────────────────────────────────────
+# - Parsing -
 
 def parse_summary_confidences(path):
     """
@@ -109,11 +118,28 @@ def parse_summary_confidences(path):
         out["chain_ptm_B"] = chain_ptm[1]   # crRNA
         out["chain_ptm_C"] = chain_ptm[2]   # target
 
-    # chain_pair_iptm: dict of dicts, e.g. {"A": {"B": 0.72, "C": 0.45}, ...}
-    cpi = sc.get("chain_pair_iptm", {})
-    out["iptm_AB"] = cpi.get(CHAIN_PROTEIN, {}).get(CHAIN_CRRNA,  np.nan)
-    out["iptm_AC"] = cpi.get(CHAIN_PROTEIN, {}).get(CHAIN_TARGET, np.nan)
-    out["iptm_BC"] = cpi.get(CHAIN_CRRNA,  {}).get(CHAIN_TARGET, np.nan)
+    # chain_pair_iptm: 2D array [num_chains x num_chains]
+    # Chain order: A=0 (protein), B=1 (crRNA), C=2 (target)
+    cpi = sc.get("chain_pair_iptm", [])
+    try:
+        cpi = np.array(cpi)
+        if cpi.ndim == 2 and cpi.shape[0] >= 3:
+            out["iptm_AB"] = float(cpi[0][1])
+            out["iptm_AC"] = float(cpi[0][2])
+            out["iptm_BC"] = float(cpi[1][2])
+        else:
+            out["iptm_AB"] = out["iptm_AC"] = out["iptm_BC"] = np.nan
+    except Exception:
+        out["iptm_AB"] = out["iptm_AC"] = out["iptm_BC"] = np.nan
+
+    chain_iptm = sc.get("chain_iptm", [])
+    try:
+        if len(chain_iptm) >= 3:
+            out["chain_iptm_A"] = float(chain_iptm[0])
+            out["chain_iptm_B"] = float(chain_iptm[1])
+            out["chain_iptm_C"] = float(chain_iptm[2])
+    except Exception:
+        pass
 
     return out
 
@@ -235,7 +261,7 @@ def parse_all_jobs(af3_dir):
     return pd.DataFrame(records)
 
 
-# ── Metadata matching ─────────────────────────────────────────────────────────
+# - Metadata matching -
 
 def match_metadata(af3_df, metadata_path):
     """
@@ -248,11 +274,15 @@ def match_metadata(af3_df, metadata_path):
     print(f"\nMetadata: {len(meta)} guides")
     print(f"AF3 results: {len(af3_df)} guides")
 
-    # Extract guide_id from job_name by removing the _lfc... suffix
+    # Job names: casrx_UID_033127_DIMT1 -> guide_id = UID_033127
     def extract_id(job_name):
-        # Pattern: everything before _lfc
-        parts = str(job_name).split("_lfc")
-        return parts[0] if len(parts) > 1 else job_name
+        s = str(job_name)
+        if s.startswith("casrx_"):
+            s = s[len("casrx_"):]
+        parts = s.split("_")
+        if len(parts) >= 2 and parts[0] == "UID":
+            return f"UID_{parts[1]}"
+        return s
 
     af3_df = af3_df.copy()
     af3_df["guide_id_match"] = af3_df["job_name"].apply(extract_id)
@@ -264,7 +294,7 @@ def match_metadata(af3_df, metadata_path):
         if c in meta.columns
     ]
 
-    merge_cols = ["guide_id", "mean_lfc", "quartile"] + baseline_cols
+    merge_cols = ["guide_id", "mean_lfc", "quintile"] + baseline_cols
     merge_cols = [c for c in merge_cols if c in meta.columns]
 
     merged = af3_df.merge(
@@ -276,14 +306,14 @@ def match_metadata(af3_df, metadata_path):
 
     print(f"Matched: {len(merged)} / {len(af3_df)}")
     if len(merged) < len(af3_df) * 0.8:
-        print("WARNING: <80% matched — check job name format vs guide_id format")
+        print("WARNING: <80% matched - check job name format vs guide_id format")
         print(f"  Sample job names: {af3_df['job_name'].head(3).tolist()}")
         print(f"  Sample guide IDs: {meta['guide_id'].head(3).tolist()}")
 
     return merged, baseline_cols
 
 
-# ── Statistical analysis ──────────────────────────────────────────────────────
+# - Statistical analysis -
 
 def spearman_pearson(x, y):
     valid = pd.DataFrame({"x": x, "y": y}).dropna()
@@ -298,33 +328,21 @@ def partial_correlation(df, metric, baseline, outcome="mean_lfc"):
     """
     Spearman partial correlation: metric vs outcome, controlling for baseline.
 
-    baseline can be:
-      - a single column name str (control for one feature)
-      - a list of column names (control for multiple features jointly)
-
-    Method: residualise both metric and outcome on baseline(s), then correlate.
+    Method: residualise both metric and outcome on baseline, then correlate.
     Tests whether AF3 metric adds predictive power beyond thermodynamic baseline.
-    Returns: (r, p, n, baseline_label)
     """
-    if isinstance(baseline, str):
-        baseline_cols = [baseline]
-        baseline_label = baseline
-    else:
-        baseline_cols = list(baseline)
-        baseline_label = "+".join(baseline_cols)
-
-    cols = [metric, outcome] + baseline_cols
+    cols = [metric, baseline, outcome]
     valid = df[cols].dropna()
     if len(valid) < 20:
-        return np.nan, np.nan, len(valid), baseline_label
+        return np.nan, np.nan, len(valid)
 
-    X = np.column_stack([valid[b].values for b in baseline_cols] + [np.ones(len(valid))])
+    X = np.column_stack([valid[baseline].values, np.ones(len(valid))])
 
     resid_metric  = valid[metric].values  - X @ lstsq(X, valid[metric].values,  rcond=None)[0]
     resid_outcome = valid[outcome].values - X @ lstsq(X, valid[outcome].values, rcond=None)[0]
 
     r, p = stats.spearmanr(resid_metric, resid_outcome)
-    return float(r), float(p), len(valid), baseline_label
+    return float(r), float(p), len(valid)
 
 
 def run_correlations(df, baseline_cols):
@@ -366,7 +384,7 @@ def run_correlations(df, baseline_cols):
 
 def run_partial_correlations(df, baseline_cols):
     """
-    Stage 2: partial correlations — AF3 metrics controlling for thermodynamics.
+    Stage 2: partial correlations - AF3 metrics controlling for thermodynamics.
 
     Key question: does ipTM predict LFC beyond what hybrid_mfe already knows?
     High partial r = AF3 captures geometry that thermodynamics misses.
@@ -383,35 +401,27 @@ def run_partial_correlations(df, baseline_cols):
     print(f"\n{'AF3 metric':<20} {'Baseline':<25} {'Partial r':>10} {'p-value':>12} {'n':>6}")
     print("-" * 70)
 
-    # Build list of baselines to test: individual + joint if multiple available
-    baselines_to_test = list(baseline_cols)
-    joint_cols = [c for c in ["hybrid_mfe_1_23", "log_unpaired"] if c in df.columns]
-    if len(joint_cols) > 1:
-        baselines_to_test.append(joint_cols)  # add joint control
-
     records = []
     for m in af3_metrics:
         if m not in df.columns:
             continue
-        for b in baselines_to_test:
-            # Check all required columns exist
-            b_list = [b] if isinstance(b, str) else b
-            if not all(col in df.columns for col in b_list):
+        for b in baseline_cols:
+            if b not in df.columns:
                 continue
-            r, p, n, b_label = partial_correlation(df, m, b)
+            r, p, n = partial_correlation(df, m, b)
             if np.isnan(r):
                 continue
             sig = " *" if p < 0.05 else ""
-            print(f"  {m:<18} {b_label:<25} {r:>10.4f} {p:>12.4e} {n:>6}{sig}")
+            print(f"  {m:<18} {b:<25} {r:>10.4f} {p:>12.4e} {n:>6}{sig}")
             records.append({
-                "af3_metric": m, "baseline": b_label,
+                "af3_metric": m, "baseline": b,
                 "partial_r": r, "partial_p": p, "n": n,
             })
 
     return pd.DataFrame(records)
 
 
-# ── Plotting ──────────────────────────────────────────────────────────────────
+# - Plotting -
 
 def plot_scatter(df, output_dir):
     if not HAS_PLOT:
@@ -462,7 +472,7 @@ def plot_scatter(df, output_dir):
     plt.close()
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# - Main -
 
 def main():
     parser = argparse.ArgumentParser(description="Analyze AF3 outputs vs TIGER LFC")
@@ -495,7 +505,7 @@ def main():
     merged, baseline_cols = match_metadata(af3_df, args.metadata)
 
     if merged.empty:
-        print("ERROR: No guides matched — check job name format")
+        print("ERROR: No guides matched - check job name format")
         return
 
     # Save merged data
@@ -505,8 +515,8 @@ def main():
 
     # Describe LFC distribution
     print(f"\nLFC range: {merged['mean_lfc'].min():.3f} to {merged['mean_lfc'].max():.3f}")
-    if "quartile" in merged.columns:
-        print(merged.groupby("quartile")["mean_lfc"].agg(["count", "min", "mean", "max"]).round(3))
+    if "quintile" in merged.columns:
+        print(merged.groupby("quintile")["mean_lfc"].agg(["count", "min", "mean", "max"]).round(3))
 
     # 3. Stage 1: raw correlations
     corr_df = run_correlations(merged, baseline_cols)
@@ -521,7 +531,7 @@ def main():
         partial_df.to_csv(partial_path, index=False)
         print(f"\nPartial correlations saved: {partial_path}")
     else:
-        print("\nNo baseline thermodynamic columns found — skipping partial correlations")
+        print("\nNo baseline thermodynamic columns found - skipping partial correlations")
         print("Expected columns: hybrid_mfe, log_unpaired, mfe")
 
     # 5. Plots

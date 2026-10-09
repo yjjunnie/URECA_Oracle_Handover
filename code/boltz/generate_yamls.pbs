@@ -2,10 +2,10 @@
 #PBS -N generate_yamls
 #PBS -l select=1:ncpus=2:mem=16gb
 #PBS -l walltime=00:30:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/generate_yamls.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/generate_yamls.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/generate_yamls.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/generate_yamls.err
 
-SCRATCH="/scratch/users/ntu/hzhang08"
+SCRATCH="/scratch/users/ntu/<YOUR_NSCC_ID>"
 ENV_PATH="$SCRATCH/envs/boltz"
 
 mkdir -p "$SCRATCH/logs" "$SCRATCH/yamls"

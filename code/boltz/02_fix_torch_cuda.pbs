@@ -2,8 +2,8 @@
 #PBS -N fix_torch_cuda
 #PBS -l select=1:ncpus=4:mem=16gb
 #PBS -l walltime=00:30:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/fix_torch_cuda.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/fix_torch_cuda.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/fix_torch_cuda.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/fix_torch_cuda.err
 
 # ============================================================
 # Only run this if 01_test_boltz.pbs printed:
@@ -16,7 +16,7 @@
 #   CUDA 11.8 → cu118
 # ============================================================
 
-SCRATCH="/scratch/users/ntu/hzhang08"
+SCRATCH="/scratch/users/ntu/<YOUR_NSCC_ID>"
 ENV_PATH="$SCRATCH/envs/boltz"
 
 CUDA_TAG="cu124"

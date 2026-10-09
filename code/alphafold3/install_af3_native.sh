@@ -26,7 +26,7 @@
 set -euo pipefail
 
 ENV_NAME="af3"
-SRC_DIR="/scratch/users/ntu/hzhang08/alphafold3_src"
+SRC_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/alphafold3_src"
 
 echo "=== AlphaFold 3 native install ==="
 echo "Start: $(date)"

@@ -126,7 +126,7 @@ echo The virtual environment is now active.
 echo.
 echo IMPORTANT: To use TIGER in the future:
 echo 1. Open Command Prompt
-echo 2. Navigate to: cd c:\Users\holly\Downloads\tiger-main\tiger-main
+echo 2. Navigate to: cd <PATH_TO_PROJECT>\tiger-main\tiger-main
 echo 3. Activate environment: tiger_env\Scripts\activate
 echo 4. Run TIGER: python tiger_trainer.py
 echo.

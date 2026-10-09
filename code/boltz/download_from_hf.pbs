@@ -2,10 +2,10 @@
 #PBS -N download_hf
 #PBS -l select=1:ncpus=2:mem=8gb
 #PBS -l walltime=00:15:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/download_hf.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/download_hf.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/download_hf.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/download_hf.err
 
-SCRATCH="/scratch/users/ntu/hzhang08"
+SCRATCH="/scratch/users/ntu/<YOUR_NSCC_ID>"
 ENV_PATH="$SCRATCH/envs/analysis"   # CPU-only venv, separate from the GPU boltz venv
 
 mkdir -p "$SCRATCH/logs" "$SCRATCH/data"
@@ -14,7 +14,9 @@ cd "$SCRATCH" || exit 1   # avoid cwd shadowing (python puts cwd first on sys.pa
 module load python/3.11.7-gcc11
 source "$ENV_PATH/bin/activate"
 
-export HF_TOKEN=os.environ["HF_TOKEN"]  # was hardcoded; read from env instead
+# Token is read from the environment - export it before submitting:
+#   export HF_TOKEN="hf_..."   (then: qsub -v HF_TOKEN ...)
+: "${HF_TOKEN:?HF_TOKEN is not set - export it before submitting this job}"
 export HUGGING_FACE_HUB_TOKEN="$HF_TOKEN"
 
 # Keep HF's cache (incl. the Xet staging dir) AND pip's cache off the small home quota
@@ -39,7 +41,7 @@ from huggingface_hub import hf_hub_download
 
 HF_TOKEN = os.environ["HF_TOKEN"]
 HF_REPO  = "yjjunnie/ureca-boltz-data"
-SCRATCH  = "/scratch/users/ntu/hzhang08"
+SCRATCH  = "/scratch/users/ntu/<YOUR_NSCC_ID>"
 
 REPO_FILES = [
     ("data/flow-cytometry.bz2",    f"{SCRATCH}/data/flow-cytometry.bz2"),
@@ -72,7 +74,7 @@ for repo_path, dest_path in REPO_FILES:
     print(f"  -> {dest_path}", flush=True)
 
 print("\nAll files downloaded.")
-print("Next: python /scratch/users/ntu/hzhang08/generate_yamls.py")
+print("Next: python /scratch/users/ntu/<YOUR_NSCC_ID>/generate_yamls.py")
 PYEOF
 STATUS=$?
 

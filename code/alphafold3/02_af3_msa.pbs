@@ -3,8 +3,8 @@
 #PBS -l select=1:ncpus=16:mem=128gb
 #PBS -l walltime=08:00:00
 #PBS -J 0-499
-#PBS -o /scratch/users/ntu/hzhang08/logs/msa_^array_index^.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/msa_^array_index^.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/msa_^array_index^.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/msa_^array_index^.err
 
 # ============================================================
 # Job 2 of 4: AF3 MSA / data pipeline (CPU only)
@@ -17,7 +17,7 @@
 # Must run BEFORE 03_af3_inference.pbs.
 #
 # Submit with: qsub 02_af3_msa.pbs
-# Monitor with: qstat -u hzhang08
+# Monitor with: qstat -u <YOUR_NSCC_ID>
 # ============================================================
 
 echo "=== AF3 MSA Step ==="
@@ -26,11 +26,11 @@ echo "Start: $(date)"
 echo "Node: $(hostname)"
 
 # ── Edit these paths ────────────────────────────────────────
-AF3_SIF="/scratch/users/ntu/hzhang08/alphafold3.sif"
-AF3_WEIGHTS="/scratch/users/ntu/hzhang08/af3_weights"
-AF3_DB="/scratch/users/ntu/hzhang08/af3_db"     # genetic databases directory
-AF3_INPUT="/scratch/users/ntu/hzhang08/af3_inputs"
-AF3_OUTPUT_MSA="/scratch/users/ntu/hzhang08/af3_outputs_msa"
+AF3_SIF="/scratch/users/ntu/<YOUR_NSCC_ID>/alphafold3.sif"
+AF3_WEIGHTS="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_weights"
+AF3_DB="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_db"     # genetic databases directory
+AF3_INPUT="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_inputs"
+AF3_OUTPUT_MSA="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_outputs_msa"
 # ────────────────────────────────────────────────────────────
 
 mkdir -p $AF3_OUTPUT_MSA

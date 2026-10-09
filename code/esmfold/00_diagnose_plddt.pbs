@@ -9,22 +9,22 @@
 #   fault, not biology.
 #
 # Copy to scratch first:
-#   scp 00_diagnose_plddt.py hzhang08@<host>:/scratch/users/ntu/hzhang08/
+#   scp 00_diagnose_plddt.py <YOUR_NSCC_ID>@<host>:/scratch/users/ntu/<YOUR_NSCC_ID>/
 #
 # Submit:
 #   qsub 00_diagnose_plddt.pbs
 #
 # Read result:
-#   cat /scratch/users/ntu/hzhang08/logs/esmfold_diag.out
+#   cat /scratch/users/ntu/<YOUR_NSCC_ID>/logs/esmfold_diag.out
 # ============================================================
 
 #PBS -N esmfold_diag
 #PBS -l select=1:ncpus=4:mem=32gb:ngpus=1
 #PBS -l walltime=01:00:00
-#PBS -o /scratch/users/ntu/hzhang08/logs/esmfold_diag.out
-#PBS -e /scratch/users/ntu/hzhang08/logs/esmfold_diag.err
+#PBS -o /scratch/users/ntu/<YOUR_NSCC_ID>/logs/esmfold_diag.out
+#PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/esmfold_diag.err
 
-SCRATCH="/scratch/users/ntu/hzhang08"
+SCRATCH="/scratch/users/ntu/<YOUR_NSCC_ID>"
 ENV_PATH="$SCRATCH/envs/esmfold"
 
 mkdir -p "$SCRATCH/logs"
