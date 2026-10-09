@@ -53,7 +53,7 @@ pip install torch==2.5.1 torchvision torchaudio --index-url https://download.pyt
 
 # Verify PyTorch CUDA compatibility
 echo "Verifying PyTorch installation..."
-python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available__()}'); print(f'CUDA version: {torch.version.cuda}')"
+python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')"
 
 # Install ProGen3 and dependencies
 echo "Installing ProGen3..."

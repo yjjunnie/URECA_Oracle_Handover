@@ -127,6 +127,121 @@ for nothing. Pointing at upstream sidesteps both.
 
 ---
 
+## 3a. Dependencies — read the upstream install docs first
+
+**Start with each project's own README and installation docs on GitHub, every time.** They
+are maintained, they get updated when a dependency breaks, and they are the authority. What
+follows is *not* a substitute — it is the list of things that went wrong for me **on NSCC
+specifically**, which the upstream docs will never tell you because they assume you have
+root and a normal machine.
+
+I lost more time to dependencies than to anything scientific. Budget for it. The general
+shape of the problem: NSCC login nodes have an old toolchain, you have no root, and compute
+nodes have no outbound internet. Almost every issue below is one of those three.
+
+### AlphaFold 3 — by far the worst, and my biggest time sink
+
+Read `alphafold3/docs/installation.md` upstream first, then `install_af3_native.sh` here,
+whose header comments explain each workaround.
+
+| Problem | What I did |
+|---|---|
+| The official route wants `docker build` and a local Docker registry. **Both need root.** | Abandoned the container. Installed natively with conda. |
+| System `gcc` is **8.5.0** (2021) — too old to compile `libcifpp`/`dssp`, which need C++17/20 | `conda install -c conda-forge gcc_linux-64 gxx_linux-64` gives gcc 12+ with no root. Re-activate the env afterwards so `CC`/`CXX` get exported, then assert `gcc >= 11`. |
+| System `cmake` is 3.26.5, `pyproject.toml` needs **>= 3.28** | Not a problem in the end — pip's build isolation fetches its own `cmake` + `ninja` wheels. Don't fight it. |
+| `pip install .` compiles C++ extensions — slow | 10–30 minutes. **Run it on a compute node**, not the login node, or CPU limits will kill it. No GPU needed to build. |
+| Half the AF3 Dockerfile builds HMMER from source | Skipped entirely. HMMER is only used by the data pipeline (`jackhmmer`/`nhmmer` MSA search), and I supplied my own MSA. |
+| The genetic databases are **~600 GB** | Skipped, via `--norun_data_pipeline`. |
+
+Python 3.12 for this one. After install, run `build_data` to fetch the chemical component
+database, then verify with `import alphafold3; jax.devices()`.
+
+At runtime AF3 also needs these, or it will either crash or silently fall back to CPU:
+
+```bash
+export XLA_FLAGS='--xla_gpu_enable_triton_gemm=false'
+export XLA_PYTHON_CLIENT_PREALLOCATE=true
+export XLA_CLIENT_MEM_FRACTION=0.95
+```
+
+> ⚠️ **Connect this to the result.** Skipping the data pipeline and the 600 GB databases is
+> *why* my protein MSA came back empty and the whole 500-complex run was wasted (see
+> `../docs/04_results.md` §0). The shortcut was reasonable — I was supplying my own MSA —
+> but it removed the only thing that would have built one if my injection didn't take.
+> **If you skip the data pipeline, you must verify your MSA actually reached the model.**
+> Check `chain_ptm` for the protein chain on the first complex before launching 500.
+
+### ProGen3 — the prebuilt wheel
+
+The thing to know: **`flash-attention` does not reliably compile on NSCC.** Building it
+from source is a long C++/CUDA build that kept failing, so I install a prebuilt wheel
+pinned to the exact Python/torch/CUDA combination instead. That is what the 187 MB
+`flash_attn.whl` in `progen3-main/` is — a cached copy of:
+
+```bash
+pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.4.post1/flash_attn-2.7.4.post1+cu12torch2.5cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+```
+
+Read that filename — it is a contract: `cu12`, `torch2.5`, `cxx11abiFALSE`, `cp310`
+(Python 3.10). **If you change Python or torch version, this wheel stops working** and you
+need the matching one from the
+[flash-attention releases page](https://github.com/Dao-AILab/flash-attention/releases).
+That is why the env is pinned to Python 3.10 and `torch==2.5.1+cu121`.
+
+Two more in `nscc_setup.sh`:
+
+- `megablocks==0.7.0` needs `--no-build-isolation`, and is installed without the `[gg]`
+  extra to avoid dragging in grouped-GEMM build deps.
+- `grouped_gemm` installs from git and **requires a GPU present at install time** — so run
+  the setup as a GPU job, not on the login node.
+
+I also fixed a typo in that script while writing this up: the first verification line had
+`torch.cuda.is_available__()` (two underscores), which would have thrown `AttributeError`
+instead of reporting CUDA status. If you saw that error, that was why.
+
+### Boltz-2 — easy, except for torch/CUDA
+
+`pip install boltz` on Python 3.11 and you're mostly done. The one recurring failure is
+torch being built against a different CUDA than the node provides — `01_test_boltz.pbs`
+exists to catch it, and `02_fix_torch_cuda.pbs` to fix it. Set `CUDA_TAG` to match what
+`nvidia-smi` reports (`cu118`, `cu121`, `cu124`).
+
+Two non-obvious pins in that fix script, both found the hard way:
+
+- `cuequivariance-torch` and `cuequivariance-ops-torch-cu12` install with `--no-deps`,
+  otherwise pip pulls in CUDA toolkit 13 and breaks everything else.
+- `nvidia-cublas-cu12>=12.5` — `cuequivariance` calls `cublasGemmGroupedBatchedEx`, which
+  only exists from cuBLAS 12.5. Upgrading cuBLAS alone stays inside the CUDA 12 family.
+
+Weights (`boltz2_conf.ckpt`, `mols.tar`) must be `scp`'d in manually — compute nodes can't
+download them. Same reason `--use_msa_server` only works from a login node.
+
+### TIGER — the Python version trap
+
+**TIGER needs Python 3.9 and TensorFlow 2.11.** Not 3.11, not a newer TF. I wasted an
+afternoon on this before giving in and installing an old Python alongside my main one;
+`tiger/QUICK_START.md` has the walkthrough and `install_with_venv.bat` automates it on
+Windows. `requirements.txt` is fully pinned (`pandas==1.5.2`, `biopython==1.80`,
+`shap==0.42.1`, …) — don't unpin it to make something else happy.
+
+Model weights arrive through a **Git LFS submodule**, so install Git LFS *before* cloning
+and use `git clone --recursive`. Clone it wrong and the weights are silently missing — you
+get a working install that can't predict anything.
+
+### ESMFold
+
+Set `TORCH_HOME` to scratch before first run or the ~2.6 GB checkpoint lands in your home
+directory and blows the quota. See `esmfold/00_diagnose_plddt.pbs`.
+
+### If you hit something not listed here
+
+In order: the upstream repo's `installation.md` or README → its GitHub **Issues** (search
+closed ones; someone has usually hit your exact CUDA/compiler combination) → `module avail`
+on NSCC to see what toolchains exist now, since the ones I used may have moved. Write down
+whatever you work out — that is all this section is.
+
+---
+
 ## 4. Hugging Face: data, results, and your own token
 
 Scratch gets wiped, so I used a **private Hugging Face dataset repo** as the real storage:

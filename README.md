@@ -126,9 +126,16 @@ The two ⚠️ rows are the obvious places to start. Both are close to done.
    **Do this before anything else.** Most of the time I lost on this project went to
    environment and CUDA problems, not to the actual science. Finding out your GPU setup is
    broken on day one is much better than finding out after a 6-hour batch job fails.
-3. Read [`docs/04_results.md`](docs/04_results.md) so you don't accidentally re-run the
-   experiment that already came back null.
-4. Pick something from [`docs/05_next_steps.md`](docs/05_next_steps.md).
+3. Read [`code/README.md` §3a — Dependencies](code/README.md#3a-dependencies--read-the-upstream-install-docs-first)
+   before you try to install any model. **Always read the upstream repo's own installation
+   docs first** — they're maintained and authoritative. §3a is just the list of things that
+   broke on NSCC: AlphaFold 3 can't use its own container route without root, the login
+   node's gcc is too old to compile it, `flash-attention` won't build so ProGen3 needs a
+   version-pinned prebuilt wheel, and TIGER needs Python 3.9. None of that is in the
+   upstream docs, because they assume a normal machine.
+4. Read [`docs/04_results.md`](docs/04_results.md) so you don't accidentally re-run the
+   experiment that already came back null — and so you see which half of it I broke.
+5. Pick something from [`docs/05_next_steps.md`](docs/05_next_steps.md).
 
 ---
 
