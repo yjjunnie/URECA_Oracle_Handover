@@ -1,0 +1,72 @@
+#!/bin/bash
+#PBS -N upload_results
+#PBS -l select=1:ncpus=2:mem=8gb
+#PBS -l walltime=00:30:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/upload_results.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/upload_results.err
+
+SCRATCH="/scratch/users/ntu/hzhang08"
+ENV_PATH="$SCRATCH/envs/analysis"   # CPU-only venv, separate from the GPU boltz venv
+
+mkdir -p "$SCRATCH/logs"
+cd "$SCRATCH" || exit 1   # avoid cwd shadowing (python puts cwd first on sys.path)
+
+module load python/3.11.7-gcc11
+source "$ENV_PATH/bin/activate"
+
+# Keep HF's cache (incl. the Xet staging dir) AND pip's cache off the small home quota
+export HF_HOME="$SCRATCH/hf_cache"
+export HF_HUB_DISABLE_XET=1
+export PIP_CACHE_DIR="$SCRATCH/pip_cache"
+mkdir -p "$HF_HOME" "$PIP_CACHE_DIR"
+
+"$ENV_PATH/bin/pip" install --quiet huggingface_hub
+PIP_STATUS=$?
+echo "pip install exit status: $PIP_STATUS"
+"$ENV_PATH/bin/python" -c "import huggingface_hub; print('huggingface_hub OK ->', huggingface_hub.__file__)"
+if [ $? -ne 0 ]; then
+    echo "ERROR: huggingface_hub still broken — check for a shadowing file/dir on sys.path"
+    exit 1
+fi
+
+echo "Start: $(date)"
+
+"$ENV_PATH/bin/python" - << 'PYEOF'
+import os, glob
+from huggingface_hub import HfApi
+
+HF_TOKEN = os.environ["HF_TOKEN"]  # was hardcoded; read from env instead
+HF_REPO  = "yjjunnie/ureca-boltz-data"
+SCRATCH  = "/scratch/users/ntu/hzhang08"
+api      = HfApi(token=HF_TOKEN)
+
+UPLOAD_DIRS = {
+    f"{SCRATCH}/boltz_analysis_results_fullprot": "results_fullprot",
+    f"{SCRATCH}/boltz_analysis_results_balanced":  "results_balanced",
+}
+
+for local_dir, hf_prefix in UPLOAD_DIRS.items():
+    files = sorted(glob.glob(f"{local_dir}/*"))
+    if not files:
+        print(f"WARNING: no files found in {local_dir}", flush=True)
+        continue
+    print(f"\nUploading {len(files)} files from {local_dir} → {hf_prefix}/", flush=True)
+    for local_path in files:
+        fname = os.path.basename(local_path)
+        repo_path = f"{hf_prefix}/{fname}"
+        print(f"  {fname} …", flush=True)
+        api.upload_file(
+            path_or_fileobj=local_path,
+            path_in_repo=repo_path,
+            repo_id=HF_REPO,
+            repo_type="dataset",
+            token=HF_TOKEN,
+        )
+
+print("\nDone.", flush=True)
+PYEOF
+STATUS=$?
+
+echo "Exit status: $STATUS"
+echo "Done: $(date)"
+exit $STATUS

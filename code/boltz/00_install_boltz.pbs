@@ -1,0 +1,115 @@
+#!/bin/bash
+#PBS -N install_boltz
+#PBS -l select=1:ncpus=8:mem=32gb
+#PBS -l walltime=01:00:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/install_boltz.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/install_boltz.err
+
+# ============================================================
+# Install Boltz-2 (code only via pip).
+#
+# Weights must be transferred manually via scp BEFORE this job:
+#   boltz2_conf.ckpt  (2.29 GB) → $SCRATCH/boltz_cache/
+#   mols.tar          (1.86 GB) → $SCRATCH/boltz_cache/
+#
+# This job then:
+#   1. Creates a Python 3.11 venv in scratch (module python/3.11.7-gcc11)
+#   2. pip installs boltz into the venv
+#   3. Extracts mols.tar → mols/ in the cache directory
+#   4. Verifies both weight files are present
+#
+# Submit with: qsub 00_install_boltz.pbs
+# Check logs:  cat /scratch/users/ntu/hzhang08/logs/install_boltz.out
+# ============================================================
+
+set -e
+
+SCRATCH="/scratch/users/ntu/hzhang08"
+ENV_PATH="$SCRATCH/envs/boltz"
+BOLTZ_CACHE="$SCRATCH/boltz_cache"
+
+mkdir -p "$SCRATCH/logs"
+
+echo "=== Boltz-2 Installation ==="
+echo "Start:     $(date)"
+echo "Node:      $(hostname)"
+echo "Env path:  $ENV_PATH"
+echo "Cache:     $BOLTZ_CACHE"
+echo ""
+
+# ── Verify weight files were transferred before proceeding ────
+echo "=== Checking weight files ==="
+MISSING=0
+
+for f in "$BOLTZ_CACHE/boltz2_conf.ckpt" "$BOLTZ_CACHE/mols.tar"; do
+    if [ -f "$f" ]; then
+        SIZE=$(du -h "$f" | cut -f1)
+        echo "  OK  $f ($SIZE)"
+    else
+        echo "  MISSING  $f"
+        MISSING=$((MISSING + 1))
+    fi
+done
+
+if [ $MISSING -gt 0 ]; then
+    echo ""
+    echo "ERROR: $MISSING weight file(s) missing from $BOLTZ_CACHE"
+    echo "Transfer them first from your Windows machine:"
+    echo "  scp -O boltz2_conf.ckpt hzhang08@aspire2.nscc.sg:$BOLTZ_CACHE/"
+    echo "  scp -O mols.tar         hzhang08@aspire2.nscc.sg:$BOLTZ_CACHE/"
+    exit 1
+fi
+
+echo ""
+
+# ── Load Python 3.11 module (needed for numpy wheel compatibility) ─
+module load python/3.11.7-gcc11
+module load cuda/12.8.1
+echo "Python module: $(which python3) $(python3 --version)"
+echo ""
+
+# ── Create venv in scratch ────────────────────────────────────
+if [ -d "$ENV_PATH" ]; then
+    echo "Env already exists at $ENV_PATH — skipping create"
+else
+    echo "Creating venv: $ENV_PATH"
+    python3 -m venv "$ENV_PATH"
+fi
+
+source "$ENV_PATH/bin/activate"
+echo "Python: $(which python3) $(python3 --version)"
+echo ""
+
+# ── Install boltz ─────────────────────────────────────────────
+# Redirect tmp and pip cache to scratch to avoid /var/tmp quota limits.
+export TMPDIR="$SCRATCH/tmp"
+mkdir -p "$TMPDIR"
+echo "=== Installing Boltz-2 via pip ==="
+pip install boltz --cache-dir "$SCRATCH/pip_cache" --quiet
+
+echo "Boltz version: $(python3 -c 'import boltz; print(boltz.__version__)')"
+echo ""
+
+# ── Extract mols.tar → mols/ ──────────────────────────────────
+# Boltz expects the mols/ directory in the cache, not the tar file.
+echo "=== Extracting mols.tar ==="
+if [ -d "$BOLTZ_CACHE/mols" ]; then
+    echo "  mols/ already extracted — skipping"
+else
+    tar -xf "$BOLTZ_CACHE/mols.tar" -C "$BOLTZ_CACHE/"
+    echo "  Extracted to $BOLTZ_CACHE/mols/"
+fi
+
+echo ""
+
+# ── Final verification ────────────────────────────────────────
+echo "=== Cache contents ==="
+ls -lh "$BOLTZ_CACHE/"
+
+echo ""
+echo "=== Pip summary ==="
+pip show boltz torch 2>/dev/null | grep -E "^(Name|Version)"
+
+echo ""
+echo "Done: $(date)"
+echo "Next: qsub 01_test_boltz.pbs"

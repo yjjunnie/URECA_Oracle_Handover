@@ -1,0 +1,79 @@
+#!/bin/bash
+#PBS -N af3_analyze
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=01:00:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/analyze.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/analyze.err
+
+# ============================================================
+# Job 4 of 4: Parse AF3 outputs and compute correlations
+#
+# Run after all inference jobs (03_af3_inference.pbs) complete.
+# Parses ipTM/pTM/pLDDT from each job's output, merges with
+# TIGER LFC values, and computes Spearman/Pearson correlations.
+#
+# Also runs partial correlations to test whether AF3 adds
+# predictive power beyond hybrid_mfe (thermodynamic baseline).
+#
+# Submit with: qsub 04_analyze.pbs
+# ============================================================
+
+echo "=== AF3 Analysis ==="
+echo "Start: $(date)"
+
+# ── Edit these paths ────────────────────────────────────────
+AF3_OUTPUT_FINAL="/scratch/users/ntu/hzhang08/af3_outputs_final"
+METADATA="/scratch/users/ntu/hzhang08/af3_v2_metadata.csv"
+RESULTS_DIR="/scratch/users/ntu/hzhang08/results"
+SCRIPT="$HOME/analyze_af3_results.py"
+# ────────────────────────────────────────────────────────────
+
+source ~/miniconda3/bin/activate base
+pip install scipy pandas numpy matplotlib --quiet 2>/dev/null
+
+mkdir -p $RESULTS_DIR
+
+# Check how many jobs completed successfully
+# Only count root-level summary files (not per-seed subdir copies)
+COMPLETED=$(find $AF3_OUTPUT_FINAL -maxdepth 2 -name "*summary_confidences.json" \
+    -not -path "*/seed-*" 2>/dev/null | wc -l)
+echo "Completed AF3 jobs found: $COMPLETED"
+
+if [ $COMPLETED -eq 0 ]; then
+    echo "ERROR: No AF3 output files found in $AF3_OUTPUT_FINAL"
+    echo "Check that inference jobs completed and paths are correct"
+    exit 1
+fi
+
+# List any jobs that failed (no output)
+echo ""
+echo "Checking for failed jobs..."
+FAILED=0
+for f in $SCRATCH/af3_inputs/*.json; do
+    JOB=$(basename $f .json)
+    if [ ! -f "$AF3_OUTPUT_FINAL/$JOB/"*summary_confidences*.json 2>/dev/null ]; then
+        echo "  MISSING: $JOB"
+        FAILED=$((FAILED+1))
+    fi
+done
+if [ $FAILED -eq 0 ]; then
+    echo "  All jobs completed"
+else
+    echo "  $FAILED jobs missing output — check their log files"
+    echo "  Proceeding with $COMPLETED completed jobs"
+fi
+
+# Run analysis
+echo ""
+echo "Running correlation analysis..."
+python3 $SCRIPT \
+    --af3_dir    $AF3_OUTPUT_FINAL \
+    --metadata   $METADATA \
+    --output_dir $RESULTS_DIR
+
+echo ""
+echo "Results directory:"
+ls -lh $RESULTS_DIR/
+
+echo ""
+echo "Done: $(date)"

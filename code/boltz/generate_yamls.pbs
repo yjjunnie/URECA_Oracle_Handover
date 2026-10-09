@@ -1,0 +1,22 @@
+#!/bin/bash
+#PBS -N generate_yamls
+#PBS -l select=1:ncpus=2:mem=16gb
+#PBS -l walltime=00:30:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/generate_yamls.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/generate_yamls.err
+
+SCRATCH="/scratch/users/ntu/hzhang08"
+ENV_PATH="$SCRATCH/envs/boltz"
+
+mkdir -p "$SCRATCH/logs" "$SCRATCH/yamls"
+
+module load python/3.11.7-gcc11
+
+echo "Python: $("$ENV_PATH/bin/python" --version)"
+echo "Start: $(date)"
+
+"$ENV_PATH/bin/pip" install --quiet pyyaml openpyxl
+
+"$ENV_PATH/bin/python" "$SCRATCH/generate_yamls.py"
+
+echo "Done: $(date)"

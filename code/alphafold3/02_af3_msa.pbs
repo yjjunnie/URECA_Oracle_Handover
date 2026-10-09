@@ -1,0 +1,93 @@
+#!/bin/bash
+#PBS -N af3_msa
+#PBS -l select=1:ncpus=16:mem=128gb
+#PBS -l walltime=08:00:00
+#PBS -J 0-499
+#PBS -o /scratch/users/ntu/hzhang08/logs/msa_^array_index^.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/msa_^array_index^.err
+
+# ============================================================
+# Job 2 of 4: AF3 MSA / data pipeline (CPU only)
+#
+# This step searches genetic databases to build MSAs for the
+# CasRx protein chain. It does NOT run the neural network.
+# GPU is not needed — CPU nodes only.
+#
+# Must run AFTER 01_fill_casrx.pbs completes.
+# Must run BEFORE 03_af3_inference.pbs.
+#
+# Submit with: qsub 02_af3_msa.pbs
+# Monitor with: qstat -u hzhang08
+# ============================================================
+
+echo "=== AF3 MSA Step ==="
+echo "Array index: $PBS_ARRAY_INDEX"
+echo "Start: $(date)"
+echo "Node: $(hostname)"
+
+# ── Edit these paths ────────────────────────────────────────
+AF3_SIF="/scratch/users/ntu/hzhang08/alphafold3.sif"
+AF3_WEIGHTS="/scratch/users/ntu/hzhang08/af3_weights"
+AF3_DB="/scratch/users/ntu/hzhang08/af3_db"     # genetic databases directory
+AF3_INPUT="/scratch/users/ntu/hzhang08/af3_inputs"
+AF3_OUTPUT_MSA="/scratch/users/ntu/hzhang08/af3_outputs_msa"
+# ────────────────────────────────────────────────────────────
+
+mkdir -p $AF3_OUTPUT_MSA
+mkdir -p $HOME/logs
+
+# Get JSON file for this array task
+JSON_FILES=($AF3_INPUT/*.json)
+TOTAL=${#JSON_FILES[@]}
+
+if [ $PBS_ARRAY_INDEX -ge $TOTAL ]; then
+    echo "Index $PBS_ARRAY_INDEX >= total files $TOTAL — nothing to do"
+    exit 0
+fi
+
+THIS_JSON=${JSON_FILES[$PBS_ARRAY_INDEX]}
+JOB_NAME=$(basename $THIS_JSON .json)
+
+echo "Processing: $JOB_NAME"
+echo "Input JSON: $THIS_JSON"
+
+# Check SIF file exists
+if [ ! -f "$AF3_SIF" ]; then
+    echo "ERROR: AlphaFold3 Singularity image not found: $AF3_SIF"
+    exit 1
+fi
+
+# Check databases exist
+if [ ! -d "$AF3_DB" ]; then
+    echo "ERROR: AlphaFold3 database directory not found: $AF3_DB"
+    echo "Check your scratch folder for the database path"
+    exit 1
+fi
+
+# Create parent output directory — let AF3 create the per-job subdir itself.
+# Pre-creating $AF3_OUTPUT_MSA/$JOB_NAME would cause AF3 to append a timestamp
+# (e.g. casrx_UID_033127_DIMT1_20240101_120000/) making the path unpredictable.
+mkdir -p $AF3_OUTPUT_MSA
+
+# Run AF3 MSA/data pipeline step only (no GPU inference)
+singularity exec \
+    --bind "$AF3_INPUT:/root/af_input" \
+    --bind "$AF3_OUTPUT_MSA:/root/af_output" \
+    --bind "$AF3_WEIGHTS:/root/models" \
+    --bind "$AF3_DB:/root/public_databases" \
+    "$AF3_SIF" \
+    python /app/alphafold3/run_alphafold.py \
+        --json_path="/root/af_input/$(basename $THIS_JSON)" \
+        --output_dir="/root/af_output" \
+        --model_dir="/root/models" \
+        --db_dir="/root/public_databases" \
+        --norun_inference
+
+STATUS=$?
+echo ""
+echo "Exit status: $STATUS"
+echo "Output files:"
+ls $AF3_OUTPUT_MSA/$JOB_NAME/ 2>/dev/null || echo "  (none)"
+echo "Done: $(date)"
+
+exit $STATUS

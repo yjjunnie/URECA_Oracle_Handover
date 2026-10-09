@@ -1,0 +1,105 @@
+#!/bin/bash
+#PBS -N af3_inf_batched
+#PBS -l select=1:ncpus=8:mem=64gb:ngpus=1
+#PBS -l walltime=12:00:00
+#PBS -J 0-49%10
+#PBS -o /scratch/users/ntu/hzhang08/logs/inf_b_^array_index^.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/inf_b_^array_index^.err
+
+# ============================================================
+# Job 3 of 4: AF3 Inference — 10 complexes per job
+#
+# Loops over 10 JSONs in the batch dir, calling AF3 once per
+# JSON with --output_dir pointing to each job's MSA subdir
+# (where _data.json lives). This avoids the --input_dir issue
+# where AF3 can't find existing _data.json files.
+#
+# Submit with: qsub 03_af3_inference_batched.pbs
+# ============================================================
+
+echo "=== AF3 Inference (Batched) ==="
+echo "Array index: $PBS_ARRAY_INDEX"
+echo "Start: $(date)"
+echo "Node: $(hostname)"
+
+nvidia-smi 2>/dev/null || echo "WARNING: nvidia-smi not available"
+
+# ── Paths ─────────────────────────────────────────────────────
+AF3_SIF="/scratch/users/ntu/hzhang08/alphafold3.sif"
+AF3_WEIGHTS="/scratch/users/ntu/hzhang08/af3_weights"
+AF3_DB="/scratch/users/ntu/hzhang08/af3_db"
+AF3_OUTPUT_MSA="/scratch/users/ntu/hzhang08/af3_outputs_msa"
+JAX_CACHE="/scratch/users/ntu/hzhang08/jax_cache"
+BATCHED_INPUT="/scratch/users/ntu/hzhang08/af3_inputs_batched"
+# ──────────────────────────────────────────────────────────────
+
+mkdir -p $JAX_CACHE
+mkdir -p $HOME/logs
+
+module load singularity/4.3.1
+
+# Get batch directory for this array task
+BATCH_DIR=$(printf "batch_%02d" $PBS_ARRAY_INDEX)
+INPUT_DIR="$BATCHED_INPUT/$BATCH_DIR"
+
+echo "Batch:          $BATCH_DIR"
+echo "Input dir:      $INPUT_DIR"
+echo "JSONs in batch: $(ls $INPUT_DIR/*.json 2>/dev/null | wc -l)"
+
+if [ ! -d "$INPUT_DIR" ]; then
+    echo "ERROR: Batch input directory not found: $INPUT_DIR"
+    echo "Run reorganise_batches.py first"
+    exit 1
+fi
+
+# Loop over each JSON in the batch and run AF3 inference separately.
+# Each call uses --output_dir pointing to the specific job's MSA subdir
+# where _data.json already lives from the MSA step.
+FAILED=0
+for JSON_PATH in $INPUT_DIR/*.json; do
+    JOB_NAME=$(basename $JSON_PATH .json)
+    JOB_MSA_DIR="$AF3_OUTPUT_MSA/$JOB_NAME"
+
+    echo ""
+    echo "--- Processing: $JOB_NAME ---"
+
+    # Check MSA output exists
+    if [ ! -f "$JOB_MSA_DIR/${JOB_NAME}_data.json" ]; then
+        echo "ERROR: _data.json not found for $JOB_NAME"
+        echo "  Expected: $JOB_MSA_DIR/${JOB_NAME}_data.json"
+        FAILED=$((FAILED+1))
+        continue
+    fi
+
+    singularity exec \
+        --nv \
+        --bind "$INPUT_DIR:/root/af_input" \
+        --bind "$AF3_OUTPUT_MSA:/root/af_output" \
+        --bind "$AF3_WEIGHTS:/root/models" \
+        --bind "$AF3_DB:/root/public_databases" \
+        --bind "$JAX_CACHE:/root/jax_cache" \
+        "$AF3_SIF" \
+        python /app/alphafold/run_alphafold.py \
+            --json_path="/root/af_input/$(basename $JSON_PATH)" \
+            --output_dir="/root/af_output/$JOB_NAME" \
+            --model_dir="/root/models" \
+            --db_dir="/root/public_databases" \
+            --jax_compilation_cache_dir="/root/jax_cache" \
+            --norun_data_pipeline \
+            --force_output_dir
+
+    STATUS=$?
+    if [ $STATUS -eq 0 ]; then
+        echo "  ✓ $JOB_NAME completed"
+    else
+        echo "  ✗ $JOB_NAME failed (exit $STATUS)"
+        FAILED=$((FAILED+1))
+    fi
+done
+
+echo ""
+echo "Batch $BATCH_DIR complete"
+echo "Failed: $FAILED / $(ls $INPUT_DIR/*.json | wc -l)"
+echo "Done: $(date)"
+
+[ $FAILED -eq 0 ] && exit 0 || exit 1

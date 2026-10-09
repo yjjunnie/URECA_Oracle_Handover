@@ -1,0 +1,152 @@
+#!/bin/bash
+#PBS -N af3_native_test
+#PBS -l select=1:ncpus=8:mem=64gb:ngpus=1
+#PBS -l walltime=04:00:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/af3_native_test.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/af3_native_test.err
+
+# ============================================================
+# VALIDATION RUN — native install, custom MSA, 3 jobs only
+#
+# Replaces 03b_af3_inference_custom_msa.pbs, which called AF3 through a
+# Singularity image that no longer exists on scratch. This runs the
+# conda-native install from install_af3_native.sh instead, so there are no
+# container paths (/root/af_input etc.) — everything is a real host path.
+#
+# Purpose is unchanged: confirm that supplying our own Cas13d ortholog MSA
+# fixes the fold. The previous 500-job run returned mean pLDDT ~30,
+# pTM 0.19, ipTM 0.23 on every job — AF3 never folded CasRx, the signature
+# of an empty protein MSA.
+#
+# DO NOT submit the full 533-job array until this returns usable pLDDT.
+# The check at the end tells you directly.
+#
+# Notes:
+#   * No --db_dir. run_alphafold.py resolves database paths only inside
+#     `if _RUN_DATA_PIPELINE.value:`, so with --norun_data_pipeline the
+#     ~600GB database tree is never touched.
+#   * --resolve_msa_overlaps=false is REQUIRED with a custom unpaired MSA,
+#     else AF3's dedup can disturb it (docs/input.md, "MSA Pairing").
+#   * XLA_FLAGS mirrors the AF3 Dockerfile's workaround for a known XLA
+#     compile-time blowup. Do not drop it.
+#
+# Submit with: qsub 03c_af3_inference_native.pbs
+# ============================================================
+
+echo "=== AF3 Inference — native install, custom MSA ==="
+echo "Start: $(date)"
+echo "Node:  $(hostname)"
+nvidia-smi 2>/dev/null || echo "WARNING: nvidia-smi not available"
+
+# ── Paths ─────────────────────────────────────────────────────
+ENV_NAME="af3"
+SRC_DIR="/scratch/users/ntu/hzhang08/alphafold3_src"
+AF3_WEIGHTS="/scratch/users/ntu/hzhang08/af3_weights"
+INPUT_DIR="/scratch/users/ntu/hzhang08/af3_inputs_flowcyt"
+OUTPUT_DIR="/scratch/users/ntu/hzhang08/af3_outputs_msatest"
+# ──────────────────────────────────────────────────────────────
+
+TEST_JOBS=(
+    "casrx_TFRC_crRNA0565_1526_1548_PM"
+    "casrx_TFRC_crRNA0565_1526_1548_SM_pos00"
+    "casrx_TFRC_crRNA0565_1526_1548_SM_pos11"
+)
+
+mkdir -p "$OUTPUT_DIR" "$HOME/logs"
+
+# ── conda env ─────────────────────────────────────────────────
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate "$ENV_NAME"
+
+# XLA settings from the AF3 Dockerfile.
+export XLA_FLAGS="--xla_gpu_enable_triton_gemm=false"
+export XLA_PYTHON_CLIENT_PREALLOCATE=true
+export XLA_CLIENT_MEM_FRACTION=0.95
+
+# ── Preflight ─────────────────────────────────────────────────
+MISSING=0
+[ -d "$INPUT_DIR" ]                 || { echo "MISSING: inputs   $INPUT_DIR"; MISSING=1; }
+[ -f "$SRC_DIR/run_alphafold.py" ]  || { echo "MISSING: source   $SRC_DIR/run_alphafold.py"; MISSING=1; }
+[ -f "$AF3_WEIGHTS/af3.bin" ]       || { echo "MISSING: weights  $AF3_WEIGHTS/af3.bin  (run 00_decompress_weights.pbs)"; MISSING=1; }
+python -c "import alphafold3" 2>/dev/null || { echo "MISSING: alphafold3 not importable in conda env '$ENV_NAME'"; MISSING=1; }
+[ $MISSING -ne 0 ] && { echo ""; echo "Fix the above and resubmit."; exit 1; }
+
+echo "GPU visible to JAX:"
+python -c "import jax; print(' ', jax.devices())"
+
+# ── Run ───────────────────────────────────────────────────────
+FAILED=0
+for JOB_NAME in "${TEST_JOBS[@]}"; do
+    JSON_PATH="$INPUT_DIR/${JOB_NAME}.json"
+    echo ""
+    echo "--- $JOB_NAME ---"
+
+    if [ ! -f "$JSON_PATH" ]; then
+        echo "ERROR: input JSON not found: $JSON_PATH"
+        FAILED=$((FAILED+1)); continue
+    fi
+
+    # Confirm the MSA actually made it into this JSON.
+    python -c "
+import json,sys
+d=json.load(open('$JSON_PATH'))
+p=[c['protein'] for c in d['sequences'] if 'protein' in c][0]
+msa=p.get('unpairedMsa','')
+n=msa.count('>')
+print(f'  MSA depth in JSON: {n} sequences')
+print(f'  protein length:    {len(p[\"sequence\"])} aa')
+if n < 2:
+    print('  WARNING: MSA looks empty!'); sys.exit(1)
+assert msa.splitlines()[1]==p['sequence'], 'A3M query != chain sequence'
+print('  A3M query matches chain sequence: OK')
+" || { echo "  ✗ JSON validation failed"; FAILED=$((FAILED+1)); continue; }
+
+    python "$SRC_DIR/run_alphafold.py" \
+        --json_path="$JSON_PATH" \
+        --output_dir="$OUTPUT_DIR/$JOB_NAME" \
+        --model_dir="$AF3_WEIGHTS" \
+        --norun_data_pipeline \
+        --resolve_msa_overlaps=false \
+        --force_output_dir
+
+    if [ $? -eq 0 ]; then echo "  ✓ $JOB_NAME completed"; else echo "  ✗ $JOB_NAME failed"; FAILED=$((FAILED+1)); fi
+done
+
+# ── Did the fix work? ─────────────────────────────────────────
+echo ""
+echo "============================================================"
+echo "RESULT — compare against the old run: pLDDT 30.4, pTM 0.19, ipTM 0.23"
+echo "============================================================"
+export OUTPUT_DIR
+python - <<'PYEOF'
+import glob, json, os
+import statistics as st
+
+out = os.environ["OUTPUT_DIR"]
+rows = []
+for sc in sorted(glob.glob(os.path.join(out, "*", "*summary_confidences*.json"))):
+    d = json.load(open(sc))
+    rows.append((os.path.basename(os.path.dirname(sc)),
+                 d.get("ptm"), d.get("iptm"), d.get("ranking_score")))
+
+if not rows:
+    print("No summary_confidences files found — inference produced no output.")
+else:
+    print(f"{'job':<45} {'pTM':>6} {'ipTM':>6} {'rank':>6}")
+    for job, ptm, iptm, rank in rows:
+        print(f"{job:<45} {ptm:>6.3f} {iptm:>6.3f} {rank:>6.3f}")
+    ptms = [r[1] for r in rows if r[1] is not None]
+    print(f"\nmean pTM = {st.mean(ptms):.3f}  (was 0.19)\n")
+    if st.mean(ptms) > 0.5:
+        print(">>> FIXED. Fold recovered — proceed to the full 533-job array.")
+    elif st.mean(ptms) > 0.3:
+        print(">>> PARTIAL. Better but weak; 53-sequence MSA depth may be the ceiling.")
+    else:
+        print(">>> STILL BROKEN. MSA was not the (only) cause — do not submit")
+        print("    the full array; investigate weights/install/input next.")
+PYEOF
+
+echo ""
+echo "Failed jobs: $FAILED / ${#TEST_JOBS[@]}"
+echo "Done: $(date)"
+[ $FAILED -eq 0 ] && exit 0 || exit 1

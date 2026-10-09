@@ -1,0 +1,64 @@
+#!/bin/bash
+#PBS -N fix_torch_cuda
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=00:30:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/fix_torch_cuda.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/fix_torch_cuda.err
+
+# ============================================================
+# Only run this if 01_test_boltz.pbs printed:
+#   "CUDA available: False"
+#
+# This reinstalls PyTorch with the correct CUDA build.
+# Edit CUDA_TAG below to match the version from nvidia-smi:
+#   CUDA 12.1 → cu121
+#   CUDA 12.4 → cu124
+#   CUDA 11.8 → cu118
+# ============================================================
+
+SCRATCH="/scratch/users/ntu/hzhang08"
+ENV_PATH="$SCRATCH/envs/boltz"
+
+CUDA_TAG="cu124"
+
+echo "=== Fix PyTorch CUDA build ==="
+echo "Start:    $(date)"
+echo "CUDA tag: $CUDA_TAG"
+echo ""
+
+module load python/3.11.7-gcc11
+module load cuda/12.8.1
+source "$ENV_PATH/bin/activate"
+
+export TMPDIR="$SCRATCH/tmp"
+mkdir -p "$TMPDIR"
+
+pip install torch \
+    --index-url "https://download.pytorch.org/whl/${CUDA_TAG}" \
+    --force-reinstall \
+    --cache-dir "$SCRATCH/pip_cache"
+
+# Install cuequivariance without deps (avoid pulling in cuda-toolkit 13)
+pip install cuequivariance-torch cuequivariance-ops-torch-cu12 \
+    --no-deps \
+    --cache-dir "$SCRATCH/pip_cache"
+
+# cuequivariance needs cublasGemmGroupedBatchedEx which was added in cublas 12.5.
+# Upgrade cublas only (stays within cuda 12 family; compatible with driver 12.8 and torch 2.6).
+pip install "nvidia-cublas-cu12>=12.5,<13" \
+    --cache-dir "$SCRATCH/pip_cache"
+
+echo ""
+echo "=== Verification ==="
+python - << 'PYCHECK'
+import torch
+print(f"torch: {torch.__version__}")
+print(f"CUDA:  {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"CUDA version: {torch.version.cuda}")
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
+PYCHECK
+
+echo ""
+echo "Done: $(date)"
+echo "Now resubmit 01_test_boltz.pbs"

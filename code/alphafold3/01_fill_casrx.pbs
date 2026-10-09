@@ -1,0 +1,68 @@
+#!/bin/bash
+#PBS -N fill_casrx
+#PBS -l select=1:ncpus=2:mem=8gb
+#PBS -l walltime=00:30:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/fill_casrx.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/fill_casrx.err
+#PBS -P your_project_code
+
+# ============================================================
+# Job 1 of 4: Fill CasRx protein sequence into all JSON files
+#
+# Run this ONCE before submitting the MSA or inference jobs.
+# Fetches RfxCas13d sequence from UniProt A0A1C5SD84 and
+# replaces the FETCH_FROM_UNIPROT_A0A1C5SD84 placeholder.
+#
+# Submit with: qsub 01_fill_casrx.pbs
+# ============================================================
+
+echo "=== Fill CasRx Sequence ==="
+echo "Start: $(date)"
+echo "Node: $(hostname)"
+
+# ── Edit these paths ────────────────────────────────────────
+JSON_DIR="/scratch/users/ntu/hzhang08/af3_inputs"
+SCRIPT="$HOME/fill_casrx_sequence.py"
+# ────────────────────────────────────────────────────────────
+
+mkdir -p $HOME/logs
+
+# Activate conda environment
+source ~/miniconda3/bin/activate base
+
+# Verify JSON directory exists
+if [ ! -d "$JSON_DIR" ]; then
+    echo "ERROR: JSON directory not found: $JSON_DIR"
+    echo "Transfer JSON files first:"
+    echo "  scp -r /local/af3_inputs_v2/ hzhang08@ntu.nscc.sg:$SCRATCH/af3_inputs/"
+    exit 1
+fi
+
+echo "JSON directory: $JSON_DIR"
+echo "Files found: $(ls $JSON_DIR/*.json 2>/dev/null | wc -l)"
+
+# Run the fill script
+# If UniProt is unreachable, download fasta first:
+#   wget https://www.uniprot.org/uniprot/A0A1C5SD84.fasta -O $SCRATCH/casrx.fasta
+# Then pass: --fasta_file $SCRATCH/casrx.fasta
+python3 $SCRIPT --json_dir $JSON_DIR
+
+echo ""
+echo "Verification — checking one JSON:"
+python3 -c "
+import json, glob
+files = sorted(glob.glob('$JSON_DIR/*.json'))
+if files:
+    with open(files[0]) as f:
+        d = json.load(f)
+    for chain in d['sequences']:
+        if 'protein' in chain:
+            seq = chain['protein']['sequence']
+            print(f'  File: {files[0].split(\"/\")[-1]}')
+            print(f'  Protein length: {len(seq)} aa')
+            print(f'  First 20 aa: {seq[:20]}')
+            print(f'  Placeholder present: {seq == \"FETCH_FROM_UNIPROT_A0A1C5SD84\"}')
+"
+
+echo ""
+echo "Done: $(date)"

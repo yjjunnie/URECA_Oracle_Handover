@@ -84,6 +84,7 @@ where to re-obtain each one.
 | [`docs/03_datasets.md`](docs/03_datasets.md) | TIGER, Konermann, Azimuth, Nucleaseq datasets: contents, columns, activity conventions |
 | [`docs/04_results.md`](docs/04_results.md) | All quantitative findings, with the numbers |
 | [`docs/05_next_steps.md`](docs/05_next_steps.md) | Open threads, ranked by value |
+| [`code/`](code/) | **Your own pipeline scripts** — ~50 files that drive the models on NSCC. The models themselves are not vendored; see that README for why and how to get them |
 | [`results/`](results/) | The actual analysis outputs, copied in so this repo stands alone |
 | [`templates/`](templates/) | Copy-paste PBS templates (single GPU job, array job, CPU analysis job) |
 
@@ -94,7 +95,8 @@ where to re-obtain each one.
 If you want to be productive within a day:
 
 1. Read `docs/02_nscc_job_scripts.md` and get an NSCC account with GPU allocation.
-2. Copy `templates/single_gpu.pbs`, change the paths to your own scratch, submit it,
+2. Copy `templates/single_gpu.pbs` (or any script in [`code/`](code/), changing
+   `/scratch/users/ntu/hzhang08` to your own scratch), submit it,
    confirm `nvidia-smi` and `torch.cuda.is_available()` both work. **Do this before
    anything else** — most time lost on this project went to environment issues, not science.
 3. Read `docs/04_results.md` so you do not re-run the structural-confidence experiment

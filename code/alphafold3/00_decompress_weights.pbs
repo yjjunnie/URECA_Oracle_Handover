@@ -1,0 +1,98 @@
+#!/bin/bash
+#PBS -N decompress_weights
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=02:00:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/decompress_weights.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/decompress_weights.err
+
+# ============================================================
+# Job 0 of 4: Decompress AF3 model weights
+#
+# Decompresses the .bin.zst weight file into $SCRATCH/af3_weights/
+# Run this ONCE before submitting any other jobs.
+#
+# Submit with: qsub 00_decompress_weights.pbs
+# ============================================================
+
+echo "=== Decompress AF3 Weights ==="
+echo "Start: $(date)"
+echo "Node:  $(hostname)"
+
+mkdir -p $HOME/logs
+# ── Edit these paths ─────────────────────────────────────────
+WEIGHTS_ZST="/scratch/users/ntu/hzhang08/af3.bin.zst"                     # path to your .bin.zst file
+WEIGHTS_DIR="/scratch/users/ntu/hzhang08/af3_weights"                     # destination folder
+# ─────────────────────────────────────────────────────────────
+
+# Check source file exists
+if [ ! -f "$WEIGHTS_ZST" ]; then
+    echo "ERROR: Weight file not found: $WEIGHTS_ZST"
+    echo "Check the filename — list your scratch files with:"
+    echo "  ls \$SCRATCH/*.zst"
+    exit 1
+fi
+
+echo "Source:      $WEIGHTS_ZST"
+echo "Size:        $(du -sh $WEIGHTS_ZST | cut -f1)"
+echo "Destination: $WEIGHTS_DIR"
+echo ""
+
+mkdir -p $WEIGHTS_DIR
+
+# Check zstd is available
+if ! command -v zstd &>/dev/null; then
+    echo "zstd not found in PATH — trying to load module"
+    module load zstd 2>/dev/null || true
+    if ! command -v zstd &>/dev/null; then
+        echo "ERROR: zstd not available. Ask NSCC to install it, or run:"
+        echo "  conda install -c conda-forge zstd"
+        exit 1
+    fi
+fi
+
+echo "zstd version: $(zstd --version)"
+echo ""
+
+# Decompress
+# The output filename must match what AF3 expects inside the weights dir.
+# AF3 looks for a file called af3_model_parameters.bin (or similar) —
+# check your AF3 version's expected name if you get a "weights not found" error.
+# -d         decompress
+# -o         output file path
+# --threads  use multiple CPU cores (matches ncpus in PBS header)
+# -v         verbose progress
+echo "Decompressing af3.bin.zst → $WEIGHTS_DIR/af3.bin ..."
+zstd -d "$WEIGHTS_ZST" \
+     -o "$WEIGHTS_DIR/af3.bin" \
+     --threads=4 \
+     -v
+
+STATUS=$?
+if [ $STATUS -ne 0 ]; then
+    echo ""
+    echo "ERROR: zstd decompression failed (exit $STATUS)"
+    exit $STATUS
+fi
+
+echo ""
+echo "Decompressed file:"
+ls -lh $WEIGHTS_DIR/
+
+# Verify the output looks right
+OUTFILE="$WEIGHTS_DIR/af3.bin"
+if [ -f "$OUTFILE" ]; then
+    SIZE=$(du -sh $OUTFILE | cut -f1)
+    echo ""
+    echo "Success — $OUTFILE ($SIZE)"
+    echo ""
+    echo "Next step: update AF3 weight path in PBS scripts if needed:"
+    echo "  AF3_WEIGHTS=\"\$SCRATCH/af3_weights\""
+    echo ""
+    echo "Then submit the pipeline:"
+    echo "  qsub 01_fill_casrx.pbs"
+else
+    echo "ERROR: Output file not found after decompression"
+    exit 1
+fi
+
+echo "Done: $(date)"

@@ -1,0 +1,161 @@
+#!/bin/bash
+#PBS -N af3_msa_test
+#PBS -l select=1:ncpus=8:mem=64gb:ngpus=1
+#PBS -l walltime=04:00:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/af3_msa_test.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/af3_msa_test.err
+
+# ============================================================
+# VALIDATION RUN — custom MSA, 3 jobs only
+#
+# Purpose: confirm that supplying our own Cas13d ortholog MSA fixes the
+# fold. The previous 500-job run returned mean pLDDT ~30, pTM 0.19,
+# ipTM 0.23 across every job — AF3 never folded CasRx, the signature of
+# an empty protein MSA.
+#
+# DO NOT submit the full 533-job array until this comes back with
+# pLDDT in a usable range. The check at the end of this script tells
+# you directly.
+#
+# What changed vs 03_af3_inference_batched.pbs:
+#   1. No MSA step. The input JSONs now carry the MSA inline
+#      (unpairedMsa = 53-sequence A3M, pairedMsa = "", templates = []),
+#      so 02_af3_msa.pbs is not run and no _data.json is needed.
+#   2. --resolve_msa_overlaps=false  — required when supplying a custom
+#      unpaired MSA, else AF3's deduplication can disturb it
+#      (docs/input.md, "MSA Pairing").
+#   3. Output goes to a fresh dir, not the old af3_outputs_msa tree.
+#
+# Submit with: qsub 03b_af3_inference_custom_msa.pbs
+# ============================================================
+
+echo "=== AF3 Inference — custom MSA validation ==="
+echo "Start: $(date)"
+echo "Node:  $(hostname)"
+nvidia-smi 2>/dev/null || echo "WARNING: nvidia-smi not available"
+
+# ── Paths ─────────────────────────────────────────────────────
+AF3_SIF="/scratch/users/ntu/hzhang08/alphafold3.sif"
+AF3_WEIGHTS="/scratch/users/ntu/hzhang08/af3_weights"
+INPUT_DIR="/scratch/users/ntu/hzhang08/af3_inputs_flowcyt"
+OUTPUT_DIR="/scratch/users/ntu/hzhang08/af3_outputs_msatest"
+JAX_CACHE="/scratch/users/ntu/hzhang08/jax_cache"
+#
+# No AF3_DB / --db_dir here on purpose. run_alphafold.py resolves every
+# database path inside `if _RUN_DATA_PIPELINE.value:` (line ~911), so with
+# --norun_data_pipeline the ~600GB database directory is never touched.
+# Binding a purged af3_db would fail the container launch for no reason.
+# ──────────────────────────────────────────────────────────────
+
+# ── Preflight: fail loudly and once, not per-job ──────────────
+MISSING=0
+[ -f "$AF3_SIF" ]     || { echo "MISSING: container image  $AF3_SIF"; MISSING=1; }
+[ -d "$AF3_WEIGHTS" ] || { echo "MISSING: model weights    $AF3_WEIGHTS"; MISSING=1; }
+[ -d "$INPUT_DIR" ]   || { echo "MISSING: input JSONs      $INPUT_DIR"; MISSING=1; }
+if [ $MISSING -ne 0 ]; then
+    echo ""
+    echo "NSCC scratch is purged periodically and the previous run was ~6 months ago,"
+    echo "so these were most likely deleted. Locate or restore them before resubmitting:"
+    echo "  find /scratch/users/ntu/hzhang08 \$HOME -maxdepth 3 -name '*.sif' 2>/dev/null"
+    echo "  ls -la /scratch/users/ntu/hzhang08/af3_weights/ 2>/dev/null"
+    exit 1
+fi
+
+# Three jobs from one parent guide: the on-target PM plus two mismatch
+# positions, so this doubles as a first look at whether predictions
+# differ between matched on/off-target complexes.
+TEST_JOBS=(
+    "casrx_TFRC_crRNA0565_1526_1548_PM"
+    "casrx_TFRC_crRNA0565_1526_1548_SM_pos00"
+    "casrx_TFRC_crRNA0565_1526_1548_SM_pos11"
+)
+
+mkdir -p "$OUTPUT_DIR" "$JAX_CACHE" "$HOME/logs"
+module load singularity/4.3.1
+
+FAILED=0
+for JOB_NAME in "${TEST_JOBS[@]}"; do
+    JSON_PATH="$INPUT_DIR/${JOB_NAME}.json"
+    echo ""
+    echo "--- $JOB_NAME ---"
+
+    if [ ! -f "$JSON_PATH" ]; then
+        echo "ERROR: input JSON not found: $JSON_PATH"
+        FAILED=$((FAILED+1))
+        continue
+    fi
+
+    # Sanity-check the MSA actually made it into the JSON.
+    python3 -c "
+import json,sys
+d=json.load(open('$JSON_PATH'))
+p=[c['protein'] for c in d['sequences'] if 'protein' in c][0]
+msa=p.get('unpairedMsa','')
+n=msa.count('>')
+print(f'  MSA depth in JSON: {n} sequences')
+print(f'  protein length:    {len(p[\"sequence\"])} aa')
+if n < 2: print('  WARNING: MSA looks empty!'); sys.exit(1)
+q=msa.splitlines()[1]
+assert q==p['sequence'], 'A3M query != chain sequence'
+print('  A3M query matches chain sequence: OK')
+" || { echo "  ✗ JSON validation failed"; FAILED=$((FAILED+1)); continue; }
+
+    singularity exec \
+        --nv \
+        --bind "$INPUT_DIR:/root/af_input" \
+        --bind "$OUTPUT_DIR:/root/af_output" \
+        --bind "$AF3_WEIGHTS:/root/models" \
+        --bind "$JAX_CACHE:/root/jax_cache" \
+        "$AF3_SIF" \
+        python /app/alphafold/run_alphafold.py \
+            --json_path="/root/af_input/${JOB_NAME}.json" \
+            --output_dir="/root/af_output/${JOB_NAME}" \
+            --model_dir="/root/models" \
+            --jax_compilation_cache_dir="/root/jax_cache" \
+            --norun_data_pipeline \
+            --resolve_msa_overlaps=false \
+            --force_output_dir
+
+    if [ $? -eq 0 ]; then echo "  ✓ $JOB_NAME completed"; else echo "  ✗ $JOB_NAME failed"; FAILED=$((FAILED+1)); fi
+done
+
+# ── Did the fix work? ─────────────────────────────────────────
+echo ""
+echo "============================================================"
+echo "RESULT — compare against the old run: pLDDT 30.4, pTM 0.19, ipTM 0.23"
+echo "============================================================"
+export OUTPUT_DIR
+python3 - <<'PYEOF'
+import glob, json, os
+import statistics as st
+
+out = os.environ.get("OUTPUT_DIR", "/scratch/users/ntu/hzhang08/af3_outputs_msatest")
+rows = []
+for sc in sorted(glob.glob(os.path.join(out, "*", "*summary_confidences*.json"))):
+    d = json.load(open(sc))
+    job = os.path.basename(os.path.dirname(sc))
+    rows.append((job, d.get("ptm"), d.get("iptm"), d.get("ranking_score")))
+
+if not rows:
+    print("No summary_confidences files found — inference did not produce output.")
+else:
+    print(f"{'job':<45} {'pTM':>6} {'ipTM':>6} {'rank':>6}")
+    for job, ptm, iptm, rank in rows:
+        print(f"{job:<45} {ptm:>6.3f} {iptm:>6.3f} {rank:>6.3f}")
+    ptms = [r[1] for r in rows if r[1] is not None]
+    print()
+    print(f"mean pTM = {st.mean(ptms):.3f}  (was 0.19)")
+    print()
+    if st.mean(ptms) > 0.5:
+        print(">>> FIXED. Fold recovered — proceed to the full array.")
+    elif st.mean(ptms) > 0.3:
+        print(">>> PARTIAL. Better but still weak; MSA depth may be the limit.")
+    else:
+        print(">>> STILL BROKEN. The MSA was not the (only) cause — do not")
+        print("    submit the full array; investigate weights/container/input.")
+PYEOF
+
+echo ""
+echo "Failed jobs: $FAILED / ${#TEST_JOBS[@]}"
+echo "Done: $(date)"
+[ $FAILED -eq 0 ] && exit 0 || exit 1

@@ -1,0 +1,64 @@
+#!/bin/bash
+# ============================================================
+# ESMFold pLDDT sanity check
+#
+# Purpose:
+#   Confirm ESMFold reports correct confidence on reference proteins
+#   BEFORE any Cas13 functional/non-functional experiment is run.
+#   Reported average of ~30 on natural sequences indicates a pipeline
+#   fault, not biology.
+#
+# Copy to scratch first:
+#   scp 00_diagnose_plddt.py hzhang08@<host>:/scratch/users/ntu/hzhang08/
+#
+# Submit:
+#   qsub 00_diagnose_plddt.pbs
+#
+# Read result:
+#   cat /scratch/users/ntu/hzhang08/logs/esmfold_diag.out
+# ============================================================
+
+#PBS -N esmfold_diag
+#PBS -l select=1:ncpus=4:mem=32gb:ngpus=1
+#PBS -l walltime=01:00:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/esmfold_diag.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/esmfold_diag.err
+
+SCRATCH="/scratch/users/ntu/hzhang08"
+ENV_PATH="$SCRATCH/envs/esmfold"
+
+mkdir -p "$SCRATCH/logs"
+cd "$SCRATCH" || exit 1
+
+module load python/3.11.7-gcc11
+module load cuda/12.1
+
+export PIP_CACHE_DIR="$SCRATCH/pip_cache"
+export TORCH_HOME="$SCRATCH/torch_hub"        # keep the ~2.6GB checkpoint on scratch
+mkdir -p "$PIP_CACHE_DIR" "$TORCH_HOME"
+
+# Build the env once; subsequent runs reuse it.
+if [ ! -d "$ENV_PATH" ]; then
+    echo "Creating ESMFold venv at $ENV_PATH …"
+    python -m venv "$ENV_PATH"
+    source "$ENV_PATH/bin/activate"
+    pip install --quiet --upgrade pip
+    pip install --quiet torch --index-url https://download.pytorch.org/whl/cu121
+    # NOTE: fair-esm's esmfold extra pulls openfold, which frequently fails to
+    # build on HPC (needs nvcc + matching CUDA headers). If this step errors,
+    # switch to the HuggingFace route instead -- same weights, no openfold:
+    #     pip install transformers accelerate
+    #     from transformers import EsmForProteinFolding
+    pip install --quiet "fair-esm[esmfold]" omegaconf pytorch-lightning \
+                        biopython ml-collections einops dm-tree numpy
+else
+    source "$ENV_PATH/bin/activate"
+fi
+
+echo "Start: $(date)"
+nvidia-smi --query-gpu=name,memory.total --format=csv
+"$ENV_PATH/bin/python" "$SCRATCH/00_diagnose_plddt.py"
+STATUS=$?
+echo "Exit status: $STATUS"
+echo "Done:  $(date)"
+exit $STATUS

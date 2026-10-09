@@ -1,0 +1,99 @@
+#!/bin/bash
+# ============================================================
+# Boltz-2 batch inference — PBS array job
+#
+# Prerequisites:
+#   1. 01_test_boltz.pbs ran successfully (env + cuda OK)
+#   2. generate_yamls.py has been run on the login node
+#      → produces $SCRATCH/yamls/manifest.tsv
+#
+# Before submitting, update the -J range:
+#   The last line of generate_yamls.py prints the correct range.
+#   e.g. if it prints "#PBS -J 0-62", set that below.
+#
+# Submit:
+#   qsub 03_boltz_batch.pbs
+#
+# Monitor:
+#   qstat -u hzhang08
+#   qstat -J <jobid>                         # summary of array
+#   cat "/scratch/users/ntu/hzhang08/logs/<jobid>[<index>].pbs101.OU"   # stdout
+#   cat "/scratch/users/ntu/hzhang08/logs/<jobid>[<index>].pbs101.ER"   # stderr
+# ============================================================
+
+#PBS -N boltz_batch
+#PBS -J 0-64
+#PBS -l select=1:ncpus=4:mem=32gb:ngpus=1
+#PBS -l walltime=06:00:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/
+#PBS -e /scratch/users/ntu/hzhang08/logs/
+
+SCRATCH="/scratch/users/ntu/hzhang08"
+ENV_PATH="$SCRATCH/envs/boltz"
+BOLTZ_CACHE="$SCRATCH/boltz_cache"
+MANIFEST="$SCRATCH/yamls_fullprot/manifest.tsv"
+BATCH_SIZE=20
+BOLTZ_OUT="$SCRATCH/boltz_out_fullprot"
+TASK_ID=${PBS_ARRAY_INDEX}
+
+mkdir -p "$SCRATCH/logs" "$BOLTZ_OUT"
+
+echo "=== Boltz batch task ${TASK_ID} ==="
+echo "Node:  $(hostname)"
+echo "Start: $(date)"
+
+module load python/3.11.7-gcc11
+module load cuda/12.8.1
+source "$ENV_PATH/bin/activate"
+
+export TMPDIR="$SCRATCH/tmp"
+export TRITON_CACHE_DIR="$SCRATCH/triton_cache"
+mkdir -p "$TMPDIR" "$TRITON_CACHE_DIR"
+
+# ── Copy this task's YAMLs to a private input directory ───────────────────────
+BATCH_INPUT="$SCRATCH/tmp/batch_input_${TASK_ID}"
+mkdir -p "$BATCH_INPUT"
+
+python - << PYEOF
+import pandas as pd, shutil, os, sys
+
+manifest  = pd.read_csv("$MANIFEST", sep="\t")
+start     = $TASK_ID * $BATCH_SIZE
+end       = start + $BATCH_SIZE
+batch     = manifest.iloc[start:end]
+
+if len(batch) == 0:
+    print(f"Task $TASK_ID: no rows in manifest at offset {start} — nothing to do.")
+    sys.exit(0)
+
+copied = 0
+for _, row in batch.iterrows():
+    src = row["yaml_path"]
+    if os.path.exists(src):
+        shutil.copy(src, "$BATCH_INPUT/")
+        copied += 1
+    else:
+        print(f"WARNING: missing YAML {src}")
+
+print(f"Task $TASK_ID: copied {copied}/{len(batch)} YAMLs to $BATCH_INPUT")
+PYEOF
+
+N_YAMLS=$(ls "$BATCH_INPUT"/*.yaml 2>/dev/null | wc -l)
+if [ "$N_YAMLS" -eq 0 ]; then
+    echo "No YAMLs found — skipping boltz predict."
+    exit 0
+fi
+
+echo "Running boltz predict on ${N_YAMLS} inputs …"
+echo ""
+
+boltz predict "$BATCH_INPUT" \
+    --out_dir "$BOLTZ_OUT" \
+    --cache "$BOLTZ_CACHE" \
+    --recycling_steps 3 \
+    --diffusion_samples 1
+
+STATUS=$?
+echo ""
+echo "Exit status: $STATUS"
+echo "Done: $(date)"

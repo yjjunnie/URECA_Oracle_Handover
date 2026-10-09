@@ -1,0 +1,52 @@
+#!/bin/bash
+#PBS -N boltz_upload_results
+#PBS -l select=1:ncpus=2:mem=8gb
+#PBS -l walltime=00:15:00
+#PBS -o /scratch/users/ntu/hzhang08/logs/upload_results.out
+#PBS -e /scratch/users/ntu/hzhang08/logs/upload_results.err
+
+SCRATCH="/scratch/users/ntu/hzhang08"
+ENV_PATH="$SCRATCH/envs/boltz"
+
+mkdir -p "$SCRATCH/logs"
+
+module load python/3.11.7-gcc11
+source "$ENV_PATH/bin/activate"
+
+export HF_TOKEN=os.environ["HF_TOKEN"]  # was hardcoded; read from env instead
+
+echo "Uploading results to HuggingFace …"
+echo "Start: $(date)"
+
+"$ENV_PATH/bin/python" - << 'PYEOF'
+import os, glob
+from huggingface_hub import HfApi
+
+HF_TOKEN   = os.environ["HF_TOKEN"]
+HF_REPO    = "yjjunnie/ureca-boltz-data"
+RESULTS_DIR = "/scratch/users/ntu/hzhang08/boltz_analysis_results"
+
+api = HfApi(token=HF_TOKEN)
+
+files = sorted(glob.glob(f"{RESULTS_DIR}/*"))
+if not files:
+    print("No files found in results directory.")
+    raise SystemExit(1)
+
+for local_path in files:
+    fname    = os.path.basename(local_path)
+    hf_path  = f"results/{fname}"
+    size_kb  = os.path.getsize(local_path) / 1024
+    print(f"  Uploading {fname} ({size_kb:.0f} KB) → {hf_path}", flush=True)
+    api.upload_file(
+        path_or_fileobj=local_path,
+        path_in_repo=hf_path,
+        repo_id=HF_REPO,
+        repo_type="dataset",
+        token=HF_TOKEN,
+    )
+
+print(f"\nDone — {len(files)} files uploaded to {HF_REPO}/results/")
+PYEOF
+
+echo "Done: $(date)"
