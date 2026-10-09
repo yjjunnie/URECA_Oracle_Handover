@@ -7,6 +7,50 @@ ordering on grounds rather than guesswork.
 
 ## Tier 1 — do these first
 
+### 1.0 Re-run AF3 with the curated MSA — this now outranks everything
+**Effort: days (mostly GPU). Value: highest — it decides what the project actually found.**
+
+The 500-complex AF3 run executed with an **empty protein MSA**; AF3 never folded CasRx.
+Full evidence in `04_results.md` §0. The AF3 arm of the headline result is void, and the
+surviving Boltz arm also ran single-sequence, so **no MSA-informed test of the hypothesis
+has ever been run.**
+
+Everything needed already exists:
+
+1. `code/alphafold3/build_casrx_msa.py` builds a query-anchored A3M from the 52 Konermann
+   Cas13d orthologs (output: `casrx_orthologs.a3m`).
+2. `code/alphafold3/add_msa_to_json.py` injects it into the input JSONs.
+3. `code/alphafold3/03c_af3_inference_native.pbs` runs it — **use `03c`, not `03b`**;
+   `03b` needs the Singularity `.sif` which is gone from scratch.
+4. Sample **≥50 guides spanning the activity range**, not a convenience sample, and
+   recompute with `analyze_af3_results.py`.
+
+Two things to know before spending the GPU time:
+
+- The single validation complex went from pLDDT 30 → 74.9 and pTM 0.19 → 0.85, but that
+  is the **protein** chain. RNA chains (chain pTM 0.15, 0.05) and interfaces (ipTM 0.35)
+  barely improved — and the hypothesis is tested through interface metrics. The re-run may
+  still be underpowered, just honestly so.
+- It is **n = 1**. Do not assume the improvement generalises before you have ~10.
+
+**Cheap pre-check first (minutes, not GPU-hours):** find out whether the AF3 genetic
+databases were ever fetched on NSCC (`alphafold3/fetch_databases.sh`, ~600 GB). If they
+were never present, the data pipeline could not have built a protein MSA — that confirms
+the mechanism and tells you the re-run is worth it. Do this before anything else.
+
+### 1.0b Decide whether Boltz should be re-run with MSAs too
+**Effort: low to decide, days to do. Value: high.**
+
+`generate_yamls.py:128` sets `"msa": "empty"` and `03_boltz_batch.pbs` omits
+`--use_msa_server`, so all 1,296 Boltz complexes were single-sequence. This was a
+reasonable call — compute nodes have no outbound internet — but it means the Boltz result
+bounds *MSA-free* prediction only.
+
+Options: pre-compute MSAs on a login node and reference them from the YAMLs, or supply the
+same `casrx_orthologs.a3m` used for AF3. Boltz stayed confident without an MSA
+(pLDDT 0.71), so this may change little — but "may change little" is a guess, and it is
+currently load-bearing for the project's main claim.
+
 ### 1.1 Finish the ESMFold pLDDT diagnostic
 **Effort: hours. Value: high — it is a correctness blocker.**
 
@@ -85,7 +129,13 @@ Do it on the TIGER gene-holdout split, not a random split, or you will leak.
 ### 2.2 Establish whether the complexes are modellable at all
 **Effort: days. Value: high — it decides whether 2.1 and all structural work is worth it.**
 
-`04_results.md` cannot distinguish "confidence doesn't predict activity" from "AF3 can't
+**Partly superseded by §1.0** — the empty-MSA finding supplies the mechanism this section
+was speculating about. Do §1.0 first; what remains below (validating against the `9M31` /
+`9LZT` experimental structures, and testing whether the binary protein+crRNA complex is
+confident when the ternary one is not) is still the right follow-up, and is now the way to
+check whether the *RNA* chains are modellable once the protein is fixed.
+
+`04_results.md` could not originally distinguish "confidence doesn't predict activity" from "AF3 can't
 model these complexes" (pLDDT ≈ 30 for everything). Settle it:
 
 - Fold a Cas13 complex with a **published experimental structure** and compare predicted
@@ -158,12 +208,15 @@ written down. If anyone revisits AF3, this will be re-derived expensively. A sho
 
 ## Explicitly not worth repeating
 
-- **Re-running AF3 or Boltz-2 confidence vs activity correlation as-is.** Two models,
-  three proteins, ~1,800 complexes, balanced design. Answered. Change the question
-  (2.1, 2.2, 3.2) rather than re-asking it.
-- **Requesting AF3 weights for a fresh start.** Boltz-2 gives the same answer and installs
-  with `pip`. Only go back to AF3 if you specifically need its genetic-database MSA
-  pipeline.
+- **Re-running the correlation *MSA-free*.** That specific condition is answered: three
+  proteins, 1,296 Boltz complexes, balanced design, nothing. Do not repeat it unchanged.
+  **This does not apply to §1.0** — re-running *with* an MSA is a different experiment and
+  is the top priority.
+- **Citing the AF3 500-complex numbers for anything.** They came from a run with an empty
+  protein MSA. See `04_results.md` §0.
+- **Requesting AF3 weights for a fresh start.** You likely already have them
+  (`af3.bin.zst` is in `my_parts/`). What may be missing is the ~600 GB genetic database
+  set — and per §1.0, checking that is the first thing to do.
 - **Scaling ProGen3 past 3B.** The scaling curve is flat; it costs VRAM and buys nothing.
 
 ---

@@ -34,9 +34,15 @@ I tested three ideas:
 
 ## 2. What I found
 
-**The structural confidence idea didn't work.** I folded roughly 1,800 complexes across two
-independent structure predictors and three different Cas proteins. No confidence metric —
-ipTM, pTM, pLDDT, ranking score — correlated meaningfully with measured guide activity.
+**The structural confidence idea didn't work — for the version of it I actually managed to
+test.** I folded about 1,800 complexes in total across two structure predictors and three
+Cas proteins. No confidence metric — ipTM, pTM, pLDDT, ranking score — correlated
+meaningfully with measured guide activity.
+
+Two caveats I want you to carry forward, because they narrow this a lot. The AlphaFold3
+half turned out to be broken (see the box below). And **neither** predictor was given an
+MSA, so what I really showed is that *MSA-free* structure prediction doesn't predict guide
+activity. That leaves 1,296 Boltz-2 complexes as the solid part of the result.
 
 What *did* work was far simpler. **Target-site accessibility** (`log_unpaired`, basically
 "how unfolded is the target site") reached ρ = −0.234, p = 1.2 × 10⁻⁷ — several times
