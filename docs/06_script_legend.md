@@ -118,7 +118,7 @@ can be salvaged.
 
 | Script | Type | Purpose |
 |---|---|---|
-| `build_casrx_msa.py` | Python | Builds a curated alignment from the 52 Cas13d orthologs in the Konermann dataset, instead of relying on AF3's database search to find homologs. Its docstring records the diagnosis of the pLDDT ≈ 30 problem. Output: `casrx_orthologs.a3m`. |
+| `build_casrx_msa.py` | Python | Builds a curated alignment from the 52 Cas13d orthologs in the Konermann dataset, instead of relying on AF3's database search to find homologs. Its docstring records the diagnosis of the pLDDT ≈ 30 problem. Input: [`../data/konermann_2023_cas13d_ortholog_sequences.csv`](../data/konermann_2023_cas13d_ortholog_sequences.csv). Output: `casrx_orthologs.a3m`, **already committed next to it**, so the alignment can be used without rebuilding. |
 | `add_msa_to_json.py` | Python | Injects the alignment **and** the protein sequence in a single pass. Both together by design: AF3 requires the first alignment sequence to match the chain's `sequence` field exactly, and one step prevents the two drifting apart. Supersedes `fill_casrx_sequence.py`. |
 | `fix_rna_pairedmsa.py` | Python | Strips the `pairedMsa` key from RNA chains. It is a protein-only field; older AF3 builds ignored it, current ones raise `ValueError: Unexpected JSON keys`. |
 
@@ -323,13 +323,19 @@ Two cluster rules govern all of the above:
 | Dataset | Source | Notes |
 |---|---|---|
 | TIGER screens (primary) | TIGER repo, `.bz2`, unpack with `tiger/DECOMPRESSION.py` | Supplies the activity labels **and** the thermodynamic feature columns. |
-| Konermann 2023 Cas13d orthologs | Paper supplementary files | 52 orthologs; the source for the curated MSA. |
+| Konermann 2023 Cas13d orthologs | **In this repo**: [`../data/`](../data/) | 52 orthologs; the source for the curated MSA and the input to the unrun ProGen3 experiment. Committed because it is 51 KB and two tasks depend on it. |
 | Azimuth V1 | Azimuth repo | Out-of-domain SpCas9 control. |
 | Nucleaseq | Paper supplementary files | Acquired but unused; see [`05_next_steps.md` §3.1](05_next_steps.md#31-use-the-nucleaseq-dataset). |
 
 Project working copies of the inputs are mirrored in a private Hugging Face dataset repo,
 `yjjunnie/ureca-boltz-data`. Access must be requested, or a new repo created, see
 [`../code/README.md` §4](../code/README.md#4-hugging-face-data-results-and-token-setup).
+
+> **Succession risk.** That private repo is the only durable copy of the full inputs and
+> outputs: NSCC scratch is wiped, and this repository holds only the summary tables in
+> [`../results/`](../results/). It sits under a personal account. Before whoever set it up
+> leaves, the data should be transferred to an account or organisation that outlives the
+> project, or re-uploaded by the successor under their own account.
 
 ---
 

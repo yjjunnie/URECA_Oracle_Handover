@@ -61,9 +61,13 @@ permit a re-run.
   without alignment information.
 - **Fix:** written and validated, not applied at scale.
   `code/alphafold3/build_casrx_msa.py` builds a curated alignment from the 52 Cas13d
-  orthologs in the Konermann dataset; `add_msa_to_json.py` injects it.
+  orthologs in the Konermann dataset; `add_msa_to_json.py` injects it. The alignment itself
+  is committed as `code/alphafold3/casrx_orthologs.a3m`, and its input as
+  [`data/konermann_2023_cas13d_ortholog_sequences.csv`](data/konermann_2023_cas13d_ortholog_sequences.csv),
+  so neither needs rebuilding.
 
-Effect of the curated MSA on a single TFRC-targeting complex:
+Effect of the curated MSA on a single TFRC-targeting complex. The output files are in
+[`results/alphafold3/msa_fix_validation/`](results/alphafold3/msa_fix_validation/):
 
 | Metric | 500-run (AF3 automatic MSA) | Curated MSA |
 |---|---|---|
@@ -110,7 +114,8 @@ starting points. The **Void** component is the largest outstanding gap.
 | [`docs/04_results.md`](docs/04_results.md) | Complete results. |
 | [`docs/05_next_steps.md`](docs/05_next_steps.md) | Ranked next steps with rationale. |
 | [`docs/06_script_legend.md`](docs/06_script_legend.md) | **Legend of every script**: name, model, purpose, and which node it runs on, plus how to run one on NSCC and a full inventory of what must be downloaded manually (model code, weights, databases, datasets). |
-| [`results/`](results/) | Output files, copied in so cluster access is not required to read them. |
+| [`results/`](results/) | Output files, copied in so cluster access is not required to read them. Includes [`results/alphafold3/msa_fix_validation/`](results/alphafold3/msa_fix_validation/), the one complex proving the MSA fix works. |
+| [`data/`](data/) | The one input dataset small enough to commit: the 52 Konermann Cas13d ortholog sequences, needed by the MSA builder and the unrun ProGen3 task. |
 | [`templates/`](templates/) | Blank PBS job scripts to copy. |
 
 ---

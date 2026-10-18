@@ -1,8 +1,12 @@
-# Results (copied in, so this repo stands alone)
+# Results
 
-These are the actual analysis outputs, copied from the working tree so the handover is
-self-contained. Interpretation is in [`../docs/04_results.md`](../docs/04_results.md),
-read that first; these are the raw tables behind it.
+These are the actual analysis outputs, copied from the working tree. Interpretation is in
+[`../docs/04_results.md`](../docs/04_results.md), read that first; these are the raw tables
+behind it.
+
+**Scope:** every number quoted in the docs can be checked against a file here. Structure
+files and the raw predictor output directories are not here, and a few docs still point
+into the original working tree for those; see "Not copied" below.
 
 ```
 boltz/                                 from URECA_Code/boltz/correlation_results/
@@ -22,7 +26,13 @@ alphafold3/                            from alphafold3/my_parts/results/results/
 ├── af3_lfc_merged.csv                 per-guide: AF3 metrics + LFC + quintile + baselines
 ├── correlations.csv                   AF3 metrics AND thermodynamic baselines vs LFC
 ├── partial_correlations.csv           AF3 metrics after controlling for baselines
-└── af3_lfc_correlations.png           scatter plots
+├── af3_lfc_correlations.png           scatter plots
+│                                      NOTE: the four files above are the VOID 500-run
+└── msa_fix_validation/                the one complex folded WITH the curated MSA
+    ├── README.md                      what these files prove, and what is omitted
+    ├── ..._summary_confidences.json   ptm 0.85, chain_ptm [0.89, 0.15, 0.05]
+    ├── ..._model.cif                  the predicted structure
+    └── ..._data.json                  the input, with the injected MSA in place
 ```
 
 ## Reading guide
@@ -34,6 +44,8 @@ alphafold3/                            from alphafold3/my_parts/results/results/
   metrics contribute nothing beyond the baselines.
 - **`boltz/balanced/correlations_balanced.csv`** is the clean confirmatory test,
   protein-balanced, equal *n*, no significant result anywhere.
+- **`alphafold3/msa_fix_validation/`** is the only evidence that the curated-MSA fix
+  works. It is one complex, not a result; see its own README.
 - **`boltz/BLAST_CasRx_smartblast.png`** confirms the protein sequence was correct, and
   incidentally names two experimental PDB structures of it (`9M31`, `9LZT`), the ground
   truth for the follow-up in `docs/05_next_steps.md` Section 2.2.
