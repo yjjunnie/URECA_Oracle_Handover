@@ -81,7 +81,7 @@ history, and obscure which code is original to the project. Clone them fresh.
 # Boltz-2 — no clone needed, it's on PyPI
 pip install boltz
 
-# AlphaFold3 — code only. Weights need a separate request to DeepMind.
+# AlphaFold3 — code only. Weights download separately; see the weights table in docs/06.
 git clone https://github.com/google-deepmind/alphafold3.git
 
 # TIGER — --recursive matters, the weights come via a Git LFS submodule

@@ -46,8 +46,11 @@ Notable implementation details worth knowing:
 [`../results/alphafold3/`](../results/alphafold3/); representative structures kept in
 `my_parts/results/cif_files/{top_ranked,bottom_ranked}/`.
 
-**Weights/databases.** Not in git. AF3 parameters require a request to DeepMind under
-their terms of use; genetic databases via `alphafold3/fetch_databases.sh`.
+**Weights/databases.** Not in git, and must not be committed — the parameters may not be
+shared outside the organisation. They download directly from
+https://storage.googleapis.com/alphafold3/af3.bin.zst (no request form); genetic databases
+via `alphafold3/fetch_databases.sh`. Terms and their consequences for this project:
+[`06_script_legend.md` §9.2.1](06_script_legend.md#921-alphafold3-weights--download-is-open-sharing-is-not).
 
 ---
 

@@ -132,9 +132,9 @@ The two ⚠️ components are both near completion and are the recommended start
    it, `flash-attention` does not build so ProGen3 requires a version-pinned prebuilt wheel,
    and TIGER requires Python 3.9. None of this appears upstream, which assumes a
    conventional machine.
-4. **Request the restricted assets early.** No model weights are in this repository.
-   AlphaFold3's require an approval request to DeepMind that is not instant, so submit it
-   before it becomes the blocker. Full inventory:
+4. **Download the model weights.** None are in this repository. All download directly,
+   including AlphaFold3's, but several are multi-gigabyte and must be fetched on a login
+   node before transfer to scratch. Full inventory:
    [`docs/06_script_legend.md` §9](docs/06_script_legend.md#9-what-is-not-in-this-repository).
 5. **Identify the relevant scripts** in
    [`docs/06_script_legend.md`](docs/06_script_legend.md), which lists every script with its

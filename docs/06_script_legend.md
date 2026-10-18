@@ -90,7 +90,7 @@ Run the numbered scripts in order.
 **What the model is.** DeepMind's structure predictor, and the first to handle
 protein–nucleic-acid complexes well, which is why it was the project's first choice: a
 Cas13d complex is protein + crRNA + target RNA. Unlike Boltz-2, both its code licence and
-its weights are restricted, and the weights require a request to DeepMind.
+its weights carry restrictions, though the weights now download directly (§9.2.1).
 
 **⚠️ Status: the production run here is void.** All 500 complexes were folded with an
 **empty protein MSA**, so the protein was never meaningfully folded. The fix is written and
@@ -264,7 +264,7 @@ where pinning matters.
 | Model | Source | Version used | Notes |
 |---|---|---|---|
 | Boltz-2 | `pip install boltz` (PyPI) | June 2025 | No clone needed. |
-| AlphaFold3 | https://github.com/google-deepmind/alphafold3 | — | Code only; weights separate. See §9.2. |
+| AlphaFold3 | https://github.com/google-deepmind/alphafold3 | — | Code only; weights download separately (§9.2). Install notes: [`docs/installation.md`](https://github.com/google-deepmind/alphafold3/blob/main/docs/installation.md) — read before `install_af3_native.sh`. |
 | TIGER | https://github.com/daklab/tiger | `NBT-submission` tag | **Clone with `--recursive`.** |
 | ProGen3 | https://github.com/profluent-ai/progen3 | 3B checkpoint | — |
 | ESM / ESMFold | https://github.com/facebookresearch/esm | — | — |
@@ -278,12 +278,26 @@ already excludes `*.ckpt` and `*.tar`.
 
 | Model | Weights file | Size | How to obtain | Blocker |
 |---|---|---|---|---|
-| **AlphaFold3** | `af3.bin.zst` → unpacked by `00_decompress_weights.pbs` | — | **Request from DeepMind** under their terms of use. Approval is required and is not instant — **start this first.** | ⚠️ **Redistribution prohibited.** Request cannot be bypassed. |
+| **AlphaFold3** | `af3.bin.zst` → unpacked by `00_decompress_weights.pbs` | — | **Direct download**, no request form: https://storage.googleapis.com/alphafold3/af3.bin.zst — the filename `00_decompress_weights.pbs` already expects. | ⚠️ **Sharing prohibited** — see §9.2.1. |
 | **Boltz-2** | `boltz2_conf.ckpt` | 2.29 GB | Downloaded by Boltz on first run, **from a login node only**. Then `scp` to scratch. | Exceeds GitHub's 100 MB limit. |
 | **Boltz-2** | `mols.tar` (ligand cache) | ~1.7 GB | Unpacked by `00_install_boltz.pbs`; transfer manually with `scp`. | Same. |
 | **TIGER** | Via **Git LFS submodule** | — | Install Git LFS **before** cloning, then `git clone --recursive`. | Silently absent if cloned wrongly. |
 | **ESMFold** | ESM-2 checkpoint | ~2.6 GB | Auto-downloaded on first run. **Set `TORCH_HOME` to scratch first**, or it fills the home quota. | Quota, not licence. |
 | **ProGen3** | `Profluent-Bio/progen3-3b` | — | Hugging Face; needs a token. | Requires an A100 to run at 3B. |
+
+#### 9.2.1 AlphaFold3 weights — download is open, sharing is not
+
+The parameters no longer require an approval request; they download directly from the URL
+above. The licence terms are unchanged, and two clauses matter for this project:
+
+| Clause | Effect here |
+|---|---|
+| Parameters "must not be published or shared" outside the organisation, and are treated as Google Confidential Information. Use is permitted only if they are "received directly from Google". | **Never commit `af3.bin` or `af3.bin.zst`, and do not pass them to anyone outside NTU.** Each person downloads their own copy. |
+| Output may be published, shared and adapted, with notice of modification. | The structures and confidence scores in [`../results/alphafold3/`](../results/alphafold3/) are fine to publish. |
+| Output **may not be used to train** machine learning models for biomolecular structure prediction similar to AF3. | Relevant to [`05_next_steps.md` §2.1](05_next_steps.md#21-add-oracle-scores-as-features-to-tiger). Feeding AF3 confidence scores into TIGER is predicting *guide activity*, not structure, so it reads as permitted — but confirm before publishing a model trained on AF3 output. |
+
+Terms: https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md
+(this is a summary, not legal advice).
 
 Two cluster rules govern all of the above:
 
