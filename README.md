@@ -48,7 +48,7 @@ feature (degree to which the target site is unfolded) reached ρ = −0.234, p =
 several times stronger than any structure predictor metric. Structural scores added nothing
 when tested as additional features on top of these simple features.
 
-### 2.3 ⚠️ The AlphaFold3 arm is invalid
+### 2.3 The AlphaFold3 arm is invalid
 
 The 500-complex AF3 run was broken. The cause was identified too late in the project to
 permit a re-run.
@@ -84,17 +84,18 @@ Effect of the curated MSA on a single TFRC-targeting complex:
 
 ## 3. Component status
 
-| Component | State |
-|---|---|
-| **AlphaFold3** pipeline | ⚠️ 500 complexes run and analysed, but with a broken MSA (section 2.3). Fix written and validated on 1 complex; never re-run at scale. |
-| **Boltz-2** pipeline | ✅ Complete — 4 datasets, plus a protein-balanced re-run. |
-| **LinearFold / MFE baselines** | ✅ Complete — the strongest predictors found. |
-| **TIGER** | ✅ Running locally; used as the source of activity labels. Never retrained. |
-| **Azimuth** (SpCas9) | ✅ Used as an out-of-domain control. |
-| **ESMFold** | ⚠️ Blocked — pLDDT values appeared incorrect; a diagnostic was written but never run to a conclusion. |
-| **ProGen3** | ⚠️ Set up and working, but never pointed at the Cas13 orthologs. |
+| Component | Status | Detail |
+|---|---|---|
+| **AlphaFold3** pipeline | **Void** | 500 complexes run and analysed, but with a broken MSA (section 2.3). Fix written and validated on 1 complex; never re-run at scale. |
+| **Boltz-2** pipeline | **Complete** | 4 datasets, plus a protein-balanced re-run. |
+| **LinearFold / MFE baselines** | **Complete** | The strongest predictors found. |
+| **TIGER** | **Complete** | Running locally; used as the source of activity labels. Never retrained. |
+| **Azimuth** (SpCas9) | **Complete** | Used as an out-of-domain control. |
+| **ESMFold** | **Blocked** | pLDDT values appeared incorrect; a diagnostic was written but never run to a conclusion. |
+| **ProGen3** | **Unrun** | Set up and working, but never pointed at the Cas13 orthologs. |
 
-The two ⚠️ components are both near completion and are the recommended starting points.
+The **Blocked** and **Unrun** components are both near completion and are the recommended
+starting points. The **Void** component is the largest outstanding gap.
 
 ---
 

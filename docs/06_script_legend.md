@@ -68,7 +68,7 @@ Run the numbered scripts in order.
 | Order | Script | Type | Runs on | Purpose |
 |---|---|---|---|---|
 | — | `download_from_hf.py` | Python | **Login node** | Downloads the input datasets and script copies from the Hugging Face dataset repo onto NSCC. Run before anything else. |
-| — | `download_from_hf.pbs` | PBS | ⚠️ CPU node | Job-script wrapper for the above. **Will fail** — compute nodes cannot reach Hugging Face. Use the `.py` on the login node instead. |
+| — | `download_from_hf.pbs` | PBS | CPU node | Job-script wrapper for the above. **Will fail** — compute nodes cannot reach Hugging Face. Use the `.py` on the login node instead. |
 | 00 | `00_install_boltz.pbs` | PBS | CPU node | Builds the Python environment and unpacks the ligand cache. CPU-only by design: installation takes 30+ minutes and does not need a GPU. Safe to re-run; skips completed work. |
 | 01 | `01_test_boltz.pbs` | PBS | GPU node | Folds one small complex as a smoke test. **Do not skip.** It prints the key names in the output JSON, which are required before any parser can be written. Guessing them and re-running 1,300 GPU jobs is the error this prevents. |
 | 02 | `02_fix_torch_cuda.pbs` | PBS | CPU node | Only needed if `torch.cuda.is_available()` returns `False`. Reinstalls PyTorch against the CUDA version the node actually provides. Set `CUDA_TAG` to match `nvidia-smi`. |
@@ -79,8 +79,8 @@ Run the numbered scripts in order.
 | 05 | `05_analyze.pbs` | PBS | CPU node | Runs `04_analyze.py` in a lightweight CPU environment. |
 | 04b | `04b_analyze_balanced.py` | Python | CPU node | The same analysis, subsampled to 85 guides per Cas protein. **This is the authoritative version** — the unbalanced analysis confounds dataset with protein. |
 | 05b | `05b_analyze_balanced.pbs` | PBS | CPU node | Runs `04b_analyze_balanced.py`. |
-| 06 | `06_upload_results.pbs` + `upload_to_hf.py` | PBS + Python | ⚠️ See note | Pushes results to Hugging Face. Run as the **final stage of every pipeline**, because scratch is wiped. ⚠️ This is submitted as a PBS job but needs outbound internet, which contradicts the rule above. Verify it can reach Hugging Face before relying on it; if not, run `upload_to_hf.py` from the login node. |
-| — | `download_results_from_hf.py` | Python | Local (Windows) | Pulls finished results back to a personal machine. **Has a known unfixed bug** — see [`../code/README.md` §4.4](../code/README.md#44--known-unfixed-bug). |
+| 06 | `06_upload_results.pbs` + `upload_to_hf.py` | PBS + Python | See note | Pushes results to Hugging Face. Run as the **final stage of every pipeline**, because scratch is wiped. This is submitted as a PBS job but needs outbound internet, which contradicts the rule above. Verify it can reach Hugging Face before relying on it; if not, run `upload_to_hf.py` from the login node. |
+| — | `download_results_from_hf.py` | Python | Local (Windows) | Pulls finished results back to a personal machine. **Has a known unfixed bug** — see [`../code/README.md` §4.4](../code/README.md#44-known-unfixed-bug). |
 | — | `Boltz_Inference_Guide.ipynb` | Notebook | Reference only | Design notes from porting the AF3 setup to Boltz: the two input formats, reconstructing target sequences from spacers, the Azimuth `30mer` parsing rule, the direct-repeat sequences. **No saved outputs — notes, not results.** Read before modifying `generate_yamls.py`. |
 
 ---
@@ -92,10 +92,10 @@ protein–nucleic-acid complexes well, which is why it was the project's first c
 Cas13d complex is protein + crRNA + target RNA. Unlike Boltz-2, both its code licence and
 its weights carry restrictions, though the weights now download directly (§9.2.1).
 
-**⚠️ Status: the production run here is void.** All 500 complexes were folded with an
+**Status: the production run here is void.** All 500 complexes were folded with an
 **empty protein MSA**, so the protein was never meaningfully folded. The fix is written and
 validated on one complex but was never applied at scale. Read
-[`../README.md` §2.3](../README.md#23--the-alphafold3-arm-is-invalid) before using anything
+[`../README.md` §2.3](../README.md#23-the-alphafold3-arm-is-invalid) before using anything
 in this directory.
 
 **Complex layout used throughout:** chain A = CasRx protein, chain B = crRNA (30 nt direct
@@ -108,7 +108,7 @@ repeat + 23 nt spacer), chain C = target RNA.
 | — | `install_af3_native.sh` | Shell | CPU node | Installs AF3 natively with conda, bypassing the official Docker route, which needs root. Header comments explain each workaround. Takes 10–30 minutes; run on a compute node, not the login node. |
 | 00 | `00_decompress_weights.pbs` | PBS | CPU node | Unpacks the compressed AF3 weights (`af3.bin.zst`) into scratch. Run once, before anything else. |
 | 01 | `01_fill_casrx.pbs` + `fill_casrx_sequence.py` | PBS + Python | CPU node | Fetches the 967 aa CasRx sequence from UniProt and substitutes it into every input JSON, which ship with a placeholder. Superseded by `add_msa_to_json.py` for the fixed pipeline. |
-| 02 | `02_af3_msa.pbs` | PBS | CPU node, array `0-499` | Runs AF3's own database search to build the MSA. CPU-heavy and does not touch the neural network, so no GPU should be requested. **⚠️ This is the stage that silently failed.** |
+| 02 | `02_af3_msa.pbs` | PBS | CPU node, array `0-499` | Runs AF3's own database search to build the MSA. CPU-heavy and does not touch the neural network, so no GPU should be requested. **This is the stage that silently failed.** |
 | 02a | `reorganise_batches.py` | Python | Login/CPU node | Shards the 500 input JSONs into 50 folders of 10, so inference can run as a 50-task array job. |
 
 ### 3.2 The MSA fix — the chain worth understanding
@@ -215,7 +215,7 @@ Runs locally on Windows, not on NSCC.
 | `CODE_FLOW_GUIDE.md` | Doc | — | Structure of the TIGER codebase. |
 | `reimplementation_guide.md` | Doc | — | Notes on the model internals, for anyone rebuilding it. |
 
-**⚠️ TIGER requires Python 3.9 and TensorFlow 2.11.** It will not work on 3.11. Clone with
+**TIGER requires Python 3.9 and TensorFlow 2.11.** It will not work on 3.11. Clone with
 `git clone --recursive` or the weights, which arrive via a Git LFS submodule, will be
 silently absent — producing a working install that cannot predict anything.
 
@@ -278,7 +278,7 @@ already excludes `*.ckpt` and `*.tar`.
 
 | Model | Weights file | Size | How to obtain | Blocker |
 |---|---|---|---|---|
-| **AlphaFold3** | `af3.bin.zst` → unpacked by `00_decompress_weights.pbs` | — | **Direct download**, no request form: https://storage.googleapis.com/alphafold3/af3.bin.zst — the filename `00_decompress_weights.pbs` already expects. | ⚠️ **Sharing prohibited** — see §9.2.1. |
+| **AlphaFold3** | `af3.bin.zst` → unpacked by `00_decompress_weights.pbs` | — | **Direct download**, no request form: https://storage.googleapis.com/alphafold3/af3.bin.zst — the filename `00_decompress_weights.pbs` already expects. | **Sharing prohibited** — see §9.2.1. |
 | **Boltz-2** | `boltz2_conf.ckpt` | 2.29 GB | Downloaded by Boltz on first run, **from a login node only**. Then `scp` to scratch. | Exceeds GitHub's 100 MB limit. |
 | **Boltz-2** | `mols.tar` (ligand cache) | ~1.7 GB | Unpacked by `00_install_boltz.pbs`; transfer manually with `scp`. | Same. |
 | **TIGER** | Via **Git LFS submodule** | — | Install Git LFS **before** cloning, then `git clone --recursive`. | Silently absent if cloned wrongly. |
@@ -312,7 +312,7 @@ Two cluster rules govern all of the above:
 |---|---|---|
 | AF3 genetic databases | **~600 GB** | **Skipped**, via `--norun_data_pipeline`, and a custom MSA supplied instead. Fetched by `alphafold3/fetch_databases.sh` upstream if needed. |
 
-> ⚠️ **This shortcut caused the project's central failure.** Skipping the databases removed
+> **This shortcut caused the project's central failure.** Skipping the databases removed
 > the only mechanism that would have built an MSA had the custom injection failed — which it
 > did, silently. **If the data pipeline is skipped, verify the MSA reached the model:** check
 > `chain_ptm` for the protein chain on the first complex before launching 500. Full account

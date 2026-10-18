@@ -16,7 +16,7 @@ def test_import(module_name, package_name=None, version_check=None):
         version = getattr(module, '__version__', 'unknown')
 
         if version_check and version != 'unknown':
-            status = "✓" if version.startswith(version_check) else "⚠"
+            status = "✓" if version.startswith(version_check) else "✗"
             print(f"{status} {module_name:25s} {version:15s} (expected: {version_check})")
         else:
             print(f"✓ {module_name:25s} {version}")
@@ -37,7 +37,7 @@ def main():
     print(f"  Python version: {sys.version}")
 
     if sys.version_info < (3, 8) or sys.version_info >= (3, 11):
-        print("  ⚠ WARNING: Python 3.8-3.10 is recommended for TensorFlow 2.11")
+        print("  WARNING: Python 3.8-3.10 is recommended for TensorFlow 2.11")
     else:
         print("  ✓ Python version is compatible")
     print()
@@ -101,7 +101,7 @@ def main():
             for i, gpu in enumerate(gpus):
                 print(f"  GPU {i}: {gpu.name}")
         else:
-            print("⚠ No GPU detected (CPU-only mode)")
+            print("NOTE: No GPU detected (CPU-only mode)")
             print("  This is fine for testing, but training will be slower")
     except Exception as e:
         print(f"✗ GPU check failed: {e}")
@@ -124,7 +124,7 @@ def main():
         print("  3. Run: python tiger_trainer.py --retrain")
         return 0
     else:
-        print(f"⚠ {passed}/{total} packages installed successfully")
+        print(f"WARNING: only {passed}/{total} packages installed successfully")
         print(f"✗ {total - passed} packages failed")
         print()
         print("Please check INSTALLATION_GUIDE.md for troubleshooting steps")

@@ -912,19 +912,19 @@ predictions = model.predict(test_data)
 
 ### 15.8 Quick Reference: Which Components to Keep/Modify/Remove
 
-#### ✅ Always Keep (Universal)
+#### Always Keep (Universal)
 - `SequenceSequentialWithNonSequenceBypass` - Handles sequence + scalar features
 - Base packing/unpacking pattern
 - Model compilation and training loop
 - Performance evaluation framework
 
-#### 🔧 Always Modify (Task-Specific)
+#### Always Modify (Task-Specific)
 - `pack_inputs()` - Adapt to your data dictionary keys
 - Model architecture - Adjust layers, sizes, activations
 - Loss function - Match to your task (regression/classification)
 - Output activation - Match to your normalization
 
-#### ❌ Remove if Not Applicable
+#### Remove if Not Applicable
 - Guide sequence logic (CRISPR-specific)
 - Context regions (genomic-specific)
 - RBP features (CRISPR-specific)

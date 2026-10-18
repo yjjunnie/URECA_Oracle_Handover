@@ -14,7 +14,7 @@ You have Python 3.11, but TIGER needs Python 3.9. Here's how to get started quic
 
 ### Install Python 3.9:
 1. Run the downloaded installer
-2. ✅ **IMPORTANT:** Check "Add Python 3.9 to PATH"
+2. **IMPORTANT:** Check "Add Python 3.9 to PATH"
 3. Click "Install Now"
 4. Wait for installation to complete
 5. Click "Close"
@@ -34,11 +34,11 @@ install_with_venv.bat
 ```
 
 **What this does:**
-- ✅ Checks for Python 3.9
-- ✅ Creates a virtual environment named `tiger_env`
-- ✅ Installs all required packages
-- ✅ Verifies installation
-- ✅ Shows you next steps
+- Checks for Python 3.9
+- Creates a virtual environment named `tiger_env`
+- Installs all required packages
+- Verifies installation
+- Shows you next steps
 
 **Expected time:** 5-10 minutes
 
@@ -176,11 +176,11 @@ tiger-main/
 
 After successful installation:
 
-1. ✅ Read [CODE_FLOW_GUIDE.md](CODE_FLOW_GUIDE.md) - Understand how TIGER works
-2. ✅ Read [REIMPLEMENTATION_GUIDE.md](REIMPLEMENTATION_GUIDE.md) - Adapt for your use case
-3. ✅ Check `data-processed/` folder for data files
-4. ✅ Run TIGER: `python tiger_trainer.py --retrain`
+1. Read [CODE_FLOW_GUIDE.md](CODE_FLOW_GUIDE.md) - Understand how TIGER works
+2. Read [REIMPLEMENTATION_GUIDE.md](REIMPLEMENTATION_GUIDE.md) - Adapt for your use case
+3. Check `data-processed/` folder for data files
+4. Run TIGER: `python tiger_trainer.py --retrain`
 
 ---
 
-**Ready to start?** Run `install_with_venv.bat` now! 🚀
+**Ready to start?** Run `install_with_venv.bat` now!

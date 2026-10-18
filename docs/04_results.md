@@ -3,7 +3,7 @@
 The main scientific output of the project. **Read this before running any new
 structure-prediction experiment**, so you do not repeat a settled null result.
 
-> ### ⚠️ Correction — both structural arms ran without MSAs
+> ### Correction — both structural arms ran without MSAs
 >
 > **AlphaFold3 (§1) is void.** The 500-complex run executed with an **empty protein MSA**.
 > AF3 never folded CasRx, so the mean pLDDT ≈ 30 throughout §1 is a pipeline fault, not a
@@ -96,7 +96,7 @@ settled.
 
 ---
 
-## 1. AlphaFold3 — 500 CasRx complexes vs TIGER LFC ❌ VOID
+## 1. AlphaFold3 — 500 CasRx complexes vs TIGER LFC (VOID)
 
 **Everything in this section was produced with an empty protein MSA (see §0). It is
 retained as a record of what was run, not as evidence.** Do not cite these numbers.

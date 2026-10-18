@@ -2,13 +2,13 @@
 
 This is a **protein language model** repository implementing ProGen3, a transformer-based model for protein sequence generation and scoring.
 
-## 🎯 High-Level Overview
+## High-Level Overview
 
 ProGen3 is designed for two main tasks:
 1. **Scoring**: Computing likelihood/perplexity of protein sequences
 2. **Generation**: Creating new protein sequences (extending or infilling)
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 progen3-main/
@@ -38,7 +38,7 @@ progen3-main/
 └── examples/                 # Usage examples
 ```
 
-## 🔄 Main Code Flows
+## Main Code Flows
 
 ### 1. **Scoring Flow** (Compute sequence likelihood)
 
@@ -104,7 +104,7 @@ Logits → Loss/Predictions
 - `src/progen3/model/attention.py`: Multi-head attention with Rotary Position Embeddings
 - `src/progen3/model/moe.py` or `src/progen3/model/mb_wrapper.py`: Sparse MoE layers
 
-## 🔑 Key Files Explained
+## Key Files Explained
 
 ### Core Model Files
 
@@ -149,7 +149,7 @@ Logits → Loss/Predictions
    - Supports extension and infilling
    - KV-cache optimization
 
-## 🎨 Special Features
+## Special Features
 
 ### Bidirectional Modeling
 Sequences are processed in both directions:
@@ -169,7 +169,7 @@ Sequences are processed in both directions:
 - Enables larger model capacity with sparse computation
 - MegaBlocks library provides efficient distributed execution
 
-## 💻 Usage Examples
+## Usage Examples
 
 ### CLI Usage
 
@@ -210,7 +210,7 @@ print(scores["log_likelihood"][0])
 outputs = model.generate(input_ids=inputs["input_ids"])
 ```
 
-## 🔍 Important Patterns
+## Important Patterns
 
 1. **Always bidirectional**: Sequences scored/generated in both directions
 2. **Special tokens**: `<bos>`, `<eos>`, `<bos_glm>`, `<eos_span>`, direction markers (1/2)
@@ -218,14 +218,14 @@ outputs = model.generate(input_ids=inputs["input_ids"])
 4. **Flash Attention**: Triton kernels for fast, memory-efficient attention
 5. **KV-cache**: Generation optimized by caching key/value states
 
-## 🚀 Getting Started
+## Getting Started
 
 1. **Explore examples**: Check `examples/` directory
 2. **Read configs**: Understand model settings in `src/progen3/config.py`
 3. **Try scoring**: Start with `src/progen3/tools/score.py` on sample FASTA
 4. **Debug flow**: Add breakpoints in `src/progen3/batch_preparer.py` to see data transformations
 
-## 📊 Detailed Architecture Overview
+## Detailed Architecture Overview
 
 ### Component Interaction Flow
 
@@ -270,7 +270,7 @@ User Input (FASTA/CSV)
 - **Click**: CLI framework
 - **Pandas, SciPy**: Data processing and evaluation
 
-## 🔬 Advanced Features
+## Advanced Features
 
 ### Scoring Details
 

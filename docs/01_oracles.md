@@ -115,7 +115,7 @@ Both are copied into [`../results/boltz/`](../results/boltz/) and
 outputs `04_analyze.py` and `04b_analyze_balanced.py` each declare — so the handover is
 complete without needing repo access.
 
-⚠️ **The download script's path mapping does not match the layout above.**
+**The download script's path mapping does not match the layout above.**
 `download_results_from_hf.py` sets `DEST_DIRS["results_balanced"]` to
 `correlation_results_balanced/` (a sibling), not `correlation_results/balanced/` (a
 subdirectory). Re-running it as written will create a second, parallel directory instead of
@@ -128,7 +128,7 @@ DEST_DIRS = {
 }
 ```
 
-⚠️ `download_results_from_hf.py` and `upload_to_hf.py` contain a **hardcoded Hugging Face
+`download_results_from_hf.py` and `upload_to_hf.py` contain a **hardcoded Hugging Face
 token**. It was deliberately not copied into this repo. See `05_next_steps.md` → Known debts.
 
 **Weights.** `boltz2_conf.ckpt` (2.29 GB) and `mols.tar` (1.86 GB) were transferred to

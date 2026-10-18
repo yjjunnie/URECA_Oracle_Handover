@@ -161,10 +161,10 @@ The project uses **TensorFlow 2.11.0**, which is compatible with:
 
 **Recommended:** Python 3.9.x
 
-- ✅ Python 3.8: Compatible
-- ✅ Python 3.9: **Recommended** (best tested)
-- ✅ Python 3.10: Compatible
-- ❌ Python 3.11+: **NOT compatible** (TensorFlow 2.11 not supported)
+- Python 3.8: Compatible
+- Python 3.9: **Recommended** (best tested)
+- Python 3.10: Compatible
+- Python 3.11+: **NOT compatible** (TensorFlow 2.11 not supported)
 
 ---
 
@@ -412,10 +412,10 @@ python -c "import numpy as np; print('NumPy:', np.__version__)"
 
 After successful installation:
 
-1. ✅ Test imports (see Verification section)
-2. ✅ Download/prepare data (see `data-processed/` folder)
-3. ✅ Read [CODE_FLOW_GUIDE.md](CODE_FLOW_GUIDE.md) to understand the codebase
-4. ✅ Run TIGER trainer: `python tiger_trainer.py --retrain`
+1. Test imports (see Verification section)
+2. Download/prepare data (see `data-processed/` folder)
+3. Read [CODE_FLOW_GUIDE.md](CODE_FLOW_GUIDE.md) to understand the codebase
+4. Run TIGER trainer: `python tiger_trainer.py --retrain`
 
 ---
 

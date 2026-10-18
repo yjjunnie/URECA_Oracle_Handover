@@ -223,7 +223,7 @@ written down. If anyone revisits AF3, this will be re-derived expensively. A sho
 
 ## Known debts
 
-### ⚠️ Revoke the committed Hugging Face token — do this now
+### Revoke the committed Hugging Face token — do this now
 
 `boltz/download_results_from_hf.py` (line ~27) and `boltz/upload_to_hf.py` both contain a
 **hardcoded Hugging Face access token in plaintext**, granting write access to the private

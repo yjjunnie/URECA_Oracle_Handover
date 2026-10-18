@@ -168,7 +168,7 @@ export XLA_PYTHON_CLIENT_PREALLOCATE=true
 export XLA_CLIENT_MEM_FRACTION=0.95
 ```
 
-> ⚠️ **Relevance to the result.** Skipping the data pipeline and the 600 GB databases is
+> **Relevance to the result.** Skipping the data pipeline and the 600 GB databases is
 > *why* the protein MSA came back empty and the entire 500-complex run was wasted (see
 > `../docs/04_results.md` §0). The shortcut was defensible, since a custom MSA was being
 > supplied, but it removed the only mechanism that would have built one had the injection
@@ -318,14 +318,14 @@ $env:HF_TOKEN = "hf_your_token_here"
 [Environment]::SetEnvironmentVariable("HF_TOKEN", "hf_your_token_here", "User")
 ```
 
-### 4.3 ⚠️ Revoke the previous token
+### 4.3 Revoke the previous token
 
 The previous token remains in plaintext in the original working copy, in
 `URECA_Code/boltz/download_results_from_hf.py` and `upload_to_hf.py`. It has write access to
 the dataset repo. Revoke it at https://huggingface.co/settings/tokens before that folder is
 distributed.
 
-### 4.4 ⚠️ Known unfixed bug
+### 4.4 Known unfixed bug
 
 `download_results_from_hf.py` writes the balanced results to the wrong location: a sibling
 folder `correlation_results_balanced/`, whereas the rest of the project expects
