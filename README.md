@@ -23,7 +23,7 @@ screen. Here are three approaches:
 
 | Approach | Rationale | Models |
 |---|---|---|
-| Structure prediction | An effective guide should form a well-folded Cas13d:crRNA:target complex, so model *confidence* in the structure should track guide activity. | AlphaFold3, Boltz-2, ESMFold |
+| Multimer Structure prediction | An effective guide should form a well-folded Cas13d:crRNA:target complex, so model *confidence* in the structure should track guide activity. | AlphaFold3, Boltz-2, ESMFold |
 | Protein language model | Score the plausibility of a Cas13 protein sequence to screen new orthologs. | ProGen3 |
 | RNA secondary structure | A guide can only bind if the target site is not already folded and inaccessible. | LinearFold / RNAfold (not done yet)|
 
