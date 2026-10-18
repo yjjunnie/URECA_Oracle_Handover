@@ -1,4 +1,4 @@
-# 02 — Writing Your Own Job Scripts on NSCC
+# 02: Writing Your Own Job Scripts on NSCC
 
 All GPU work ran on **NSCC ASPIRE** under **PBS Pro**. This is the most reusable part of
 the handover: the science changes, the cluster mechanics do not.
@@ -31,8 +31,8 @@ failure does not restart the whole set.
 ## 2. The filesystem rule that matters most
 
 ```
-/home/users/ntu/<user>/      small quota — code and scripts only
-/scratch/users/ntu/<user>/   large quota — everything else; PURGED PERIODICALLY
+/home/users/ntu/<user>/      small quota, code and scripts only
+/scratch/users/ntu/<user>/   large quota, everything else; PURGED PERIODICALLY
 ```
 
 Two consequences that caused most of the project's failures:
@@ -71,14 +71,14 @@ not "later". The Boltz pipeline does this with
 
 Rules learned the hard way:
 
-- **`#PBS` lines must come before any executable line** — but comments are fine, so a
+- **`#PBS` lines must come before any executable line**: but comments are fine, so a
   header block of `#` documentation above them is allowed (see `boltz/03_boltz_batch.pbs`,
   which puts its usage notes first).
 - **`mkdir -p` your log directory before submitting.** If `-o`'s directory does not exist
   the job dies silently with no output at all. This is the single most confusing failure
   mode on PBS.
 - **Ask for the GPU explicitly** with `ngpus=1`. A job without it runs on a CPU node and
-  `torch.cuda.is_available()` returns False — which looks like a broken install.
+  `torch.cuda.is_available()` returns False, which looks like a broken install.
 - Keep walltime honest. Short walltime = faster scheduling; overrunning = total loss of
   the job, so pad by ~2×.
 - `cd $PBS_O_WORKDIR` to start in the submission directory (PBS otherwise starts in `$HOME`).
@@ -123,7 +123,7 @@ source activate progen3_env     # NOT `conda activate` in a batch job
 ```
 
 Modules seen in working scripts: `python/3.11.7-gcc11`, `cuda/12.8.1`, `cuda/12.2.2`,
-`cuda/12.1`, `gcc/11.2.0-nscc`, `singularity/4.3.1`. Run `module avail` — these change.
+`cuda/12.1`, `gcc/11.2.0-nscc`, `singularity/4.3.1`. Run `module avail`: these change.
 
 **Build the environment in its own CPU-only job**, not inside your GPU job. Installs take
 30+ minutes and burn GPU allocation doing nothing. `boltz/00_install_boltz.pbs` is the
@@ -154,7 +154,7 @@ if torch.cuda.is_available():
 PYCHECK
 ```
 
-If False, reinstall torch against the CUDA version `nvidia-smi` reports — that is all
+If False, reinstall torch against the CUDA version `nvidia-smi` reports: that is all
 `boltz/02_fix_torch_cuda.pbs` does.
 
 ### Containers
@@ -165,7 +165,7 @@ compilation cache (`$SCRATCH/jax_cache`) or every task recompiles from scratch.
 
 ---
 
-## 5. Array jobs — the right way to run N complexes
+## 5. Array jobs: the right way to run N complexes
 
 Never submit N separate jobs. Use a PBS array: one script, many indices.
 
@@ -197,7 +197,7 @@ Three details that make this robust, all taken from `boltz/03_boltz_batch.pbs`:
    silently skips work.
 
 With `-o` set to a directory, array logs land as
-`<jobid>[<index>].pbs101.OU` / `.ER` — quote those paths in the shell, the brackets are
+`<jobid>[<index>].pbs101.OU` / `.ER`, quote those paths in the shell, the brackets are
 glob characters.
 
 ```bash
@@ -217,7 +217,7 @@ converged on, and it is worth copying:
 02_fix_*.pbs         GPU   remediation for the known CUDA failure
 generate_inputs.py   login build inputs + manifest; print the array range
 03_batch_*.pbs       GPU   array job over the manifest
-04_analyze.py        —     pure analysis, no cluster assumptions
+04_analyze.py, pure analysis, no cluster assumptions
 05_analyze.pbs       CPU   thin wrapper that runs 04 in the analysis env
 06_upload_*.pbs      CPU   push results off scratch before it is purged
 ```
@@ -228,7 +228,7 @@ Two habits that paid off repeatedly:
   `cat`s the confidence JSON specifically so the exact key names are known *before* the
   parser in `04_analyze.py` is written. Guessing key names then re-running 1,300 GPU jobs
   is the expensive mistake this avoids.
-- **Put a usage comment block at the top of every script** — what it needs, what it
+- **Put a usage comment block at the top of every script**: what it needs, what it
   produces, what to submit next. Every script in `boltz/` does this, and it is why the
   pipeline is still readable months later.
 
@@ -251,12 +251,12 @@ Copy-paste starting points in [`../templates/`](../templates/):
 
 | Symptom | Cause |
 |---|---|
-| No output file at all | `-o`/`-e` directory does not exist — `mkdir -p` it |
+| No output file at all | `-o`/`-e` directory does not exist, `mkdir -p` it |
 | `torch.cuda.is_available()` False | missing `ngpus=1`, or torch/CUDA mismatch |
 | Quota error during `pip install` | `TMPDIR`/`PIP_CACHE_DIR` not redirected to scratch |
 | Quota error mid-inference | `TRITON_CACHE_DIR` not redirected |
 | Job killed with no error | walltime exceeded |
-| Array tasks process wrong files | shared input dir — give each task a private one |
+| Array tasks process wrong files | shared input dir, give each task a private one |
 | Results gone | scratch purged; upload at the end of the pipeline |
 | Container cannot find files | scratch paths not bound into Singularity |
 | `conda activate` fails in a job | use `source activate` |

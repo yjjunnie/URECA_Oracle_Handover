@@ -3,9 +3,9 @@
 Handover documentation for the URECA project on AI models for CRISPR-Cas13d guide RNA (gRNA)
 design.
 
-- **This file** — scope, results, status, repo layout, recommended next steps.
-- **[`code/README.md`](code/README.md)** — how to run the pipelines.
-- **[`docs/`](docs/)** — per-topic detail.
+- **This file**: scope, results, status, repo layout, recommended next steps.
+- **[`code/README.md`](code/README.md)**: how to run the pipelines.
+- **[`docs/`](docs/)**: per-topic detail.
 
 ---
 
@@ -39,12 +39,12 @@ were folded across two structure predictors and three Cas proteins. No confidenc
 
 Two constraints narrow this result:
 
-1. The AlphaFold3 arm was invalid — see section 2.3.
+1. The AlphaFold3 arm was invalid; see section 2.3.
 2. Neither predictor was supplied an MSA. The result therefore applies to *MSA-free*
    structure prediction only. The 1,296 Boltz-2 complexes constitute the valid portion.
 
 **2.2 Target-site accessibility outperformed all structural metrics.** The `log_unpaired`
-feature (degree to which the target site is unfolded) reached ρ = −0.234, p = 1.2 × 10⁻⁷ —
+feature (degree to which the target site is unfolded) reached ρ = −0.234, p = 1.2 × 10⁻⁷,
 several times stronger than any structure predictor metric. Structural scores added nothing
 when tested as additional features on top of these simple features.
 
@@ -77,7 +77,7 @@ Effect of the curated MSA on a single TFRC-targeting complex:
   protein. Treat that arm as provisional.
 - The Boltz-2 arm is independent and unaffected.
 - RNA chains remained poorly modelled even with the curated MSA (chain pTM 0.15 and 0.05),
-  so the overall conclusion is unlikely to change — but this has not been tested and should
+  so the overall conclusion is unlikely to change, but this has not been tested and should
   not be written up as though it has.
 
 ---
@@ -109,7 +109,7 @@ starting points. The **Void** component is the largest outstanding gap.
 | [`docs/03_datasets.md`](docs/03_datasets.md) | Datasets, their columns, and the direction of "active" in each. |
 | [`docs/04_results.md`](docs/04_results.md) | Complete results. |
 | [`docs/05_next_steps.md`](docs/05_next_steps.md) | Ranked next steps with rationale. |
-| [`docs/06_script_legend.md`](docs/06_script_legend.md) | **Legend of every script** — name, model, purpose, and which node it runs on — plus how to run one on NSCC and a full inventory of what must be downloaded manually (model code, weights, databases, datasets). |
+| [`docs/06_script_legend.md`](docs/06_script_legend.md) | **Legend of every script**: name, model, purpose, and which node it runs on, plus how to run one on NSCC and a full inventory of what must be downloaded manually (model code, weights, databases, datasets). |
 | [`results/`](results/) | Output files, copied in so cluster access is not required to read them. |
 | [`templates/`](templates/) | Blank PBS job scripts to copy. |
 
@@ -126,7 +126,7 @@ starting points. The **Void** component is the largest outstanding gap.
    of project time, more than the research itself. A broken GPU setup is far cheaper to
    discover on day one than after a 6-hour batch job fails.
 3. **Read the dependency notes before installing any model:**
-   [`code/README.md` §3a](code/README.md#3a-dependencies--read-the-upstream-install-docs-first).
+   [`code/README.md` §3a](code/README.md#3a-dependencies-read-the-upstream-install-docs-first).
    Consult each upstream repository's own installation documentation first, as it is
    maintained and authoritative. §3a covers only the NSCC-specific failures: AlphaFold 3
    cannot use its container route without root, the login node's gcc is too old to compile
@@ -164,7 +164,7 @@ In priority order. Full rationale, plus work to avoid repeating, is in
 3. **Run ProGen3 on the Konermann orthologs.** Entirely unrun, fully set up, and a
    self-contained result.
 4. **Add oracle scores to TIGER as additional features** rather than testing them in
-   isolation. Whether these metrics rank guides on their own is answered — they do not.
+   isolation. Whether these metrics rank guides on their own is answered: they do not.
    Whether they add anything to a model that already works is the better question and was
    never addressed.
 

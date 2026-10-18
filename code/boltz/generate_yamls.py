@@ -37,7 +37,7 @@ RANDOM_SEED = 42
 #   SpCas9   → azimuth_v1 (85 of 882 guides)
 # tiger_ht and konermann_casrx excluded (same CasRx protein, redundant here)
 TIGER_FC_N  = 85    # CasRx representative
-TIGER_HT_N  = 0     # excluded — same protein as tiger_fc
+TIGER_HT_N  = 0     # excluded, same protein as tiger_fc
 AZIMUTH_N   = 85    # SpCas9 representative
 
 # ── Full protein sequences ────────────────────────────────────────────────────

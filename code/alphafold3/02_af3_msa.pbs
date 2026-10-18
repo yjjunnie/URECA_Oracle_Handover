@@ -11,7 +11,7 @@
 #
 # This step searches genetic databases to build MSAs for the
 # CasRx protein chain. It does NOT run the neural network.
-# GPU is not needed — CPU nodes only.
+# GPU is not needed: CPU nodes only.
 #
 # Must run AFTER 01_fill_casrx.pbs completes.
 # Must run BEFORE 03_af3_inference.pbs.
@@ -41,7 +41,7 @@ JSON_FILES=($AF3_INPUT/*.json)
 TOTAL=${#JSON_FILES[@]}
 
 if [ $PBS_ARRAY_INDEX -ge $TOTAL ]; then
-    echo "Index $PBS_ARRAY_INDEX >= total files $TOTAL — nothing to do"
+    echo "Index $PBS_ARRAY_INDEX >= total files $TOTAL, nothing to do"
     exit 0
 fi
 
@@ -64,7 +64,7 @@ if [ ! -d "$AF3_DB" ]; then
     exit 1
 fi
 
-# Create parent output directory — let AF3 create the per-job subdir itself.
+# Create parent output directory: let AF3 create the per-job subdir itself.
 # Pre-creating $AF3_OUTPUT_MSA/$JOB_NAME would cause AF3 to append a timestamp
 # (e.g. casrx_UID_033127_DIMT1_20240101_120000/) making the path unpredictable.
 mkdir -p $AF3_OUTPUT_MSA

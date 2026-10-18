@@ -1,7 +1,7 @@
 # Results (copied in, so this repo stands alone)
 
 These are the actual analysis outputs, copied from the working tree so the handover is
-self-contained. Interpretation is in [`../docs/04_results.md`](../docs/04_results.md) —
+self-contained. Interpretation is in [`../docs/04_results.md`](../docs/04_results.md),
 read that first; these are the raw tables behind it.
 
 ```
@@ -32,10 +32,10 @@ alphafold3/                            from alphafold3/my_parts/results/results/
   (`True`). The baselines win by 3–5×.
 - **`alphafold3/partial_correlations.csv`** is the file that closes the argument: AF3
   metrics contribute nothing beyond the baselines.
-- **`boltz/balanced/correlations_balanced.csv`** is the clean confirmatory test —
+- **`boltz/balanced/correlations_balanced.csv`** is the clean confirmatory test,
   protein-balanced, equal *n*, no significant result anywhere.
 - **`boltz/BLAST_CasRx_smartblast.png`** confirms the protein sequence was correct, and
-  incidentally names two experimental PDB structures of it (`9M31`, `9LZT`) — the ground
+  incidentally names two experimental PDB structures of it (`9M31`, `9LZT`), the ground
   truth for the follow-up in `docs/05_next_steps.md` Section 2.2.
 - Prefer `balanced/` over the unbalanced Boltz tables. The unbalanced pass confounds
   dataset with Cas protein and has unequal *n*; its few marginal p-values did not
@@ -43,7 +43,7 @@ alphafold3/                            from alphafold3/my_parts/results/results/
 
 ## Not copied
 
-- `.cif` structure files and renders — see
+- `.cif` structure files and renders, see
   `alphafold3/my_parts/results/cif_files/{top_ranked,bottom_ranked}/` in the working tree
   (5 structures from each activity extreme).
 - Raw AF3/Boltz output directories, which lived on NSCC scratch and have likely been

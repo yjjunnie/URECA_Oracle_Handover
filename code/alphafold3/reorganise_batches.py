@@ -9,7 +9,7 @@ Each batch gets its own subdirectory under af3_inputs_batched/.
 AF3 will use --input_dir to process all 10 JSONs in a batch
 sequentially within one PBS job.
 
-The MSA outputs (af3_outputs_msa/) stay flat — AF3 finds the
+The MSA outputs (af3_outputs_msa/) stay flat, AF3 finds the
 _data.json for each complex automatically since --output_dir
 points to af3_outputs_msa/ and --force_output_dir is set.
 
@@ -55,5 +55,5 @@ for batch_num, i in enumerate(range(0, len(all_jsons), BATCH_SIZE)):
           f"({os.path.basename(chunk[0]).replace('.json','')} ... "
           f"{os.path.basename(chunk[-1]).replace('.json','')})")
 
-print(f"\nDone — {batch_num+1} batches in {BATCHED_INPUT}/")
+print(f"\nDone, {batch_num+1} batches in {BATCHED_INPUT}/")
 print("Ready to submit 03_af3_inference_batched.pbs")

@@ -35,7 +35,7 @@ echo "Start: $(date)"
 source "$(conda info --base)/etc/profile.d/conda.sh"
 
 if conda env list | grep -qE "^${ENV_NAME}\s"; then
-    echo "Conda env '${ENV_NAME}' already exists — reusing it."
+    echo "Conda env '${ENV_NAME}' already exists, reusing it."
 else
     echo "Creating conda env '${ENV_NAME}' (python 3.12) ..."
     conda create -y -n "${ENV_NAME}" python=3.12
@@ -96,7 +96,7 @@ print('devices:', jax.devices())
 echo ""
 echo "Done: $(date)"
 echo ""
-echo "NOTE: jax.devices() will show CPU on a login node — that is expected."
+echo "NOTE: jax.devices() will show CPU on a login node: that is expected."
 echo "      Check for GPU from a GPU compute node before running inference."
 echo ""
 echo "To use in a PBS job:"

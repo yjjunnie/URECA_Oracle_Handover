@@ -6,16 +6,16 @@
 #PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/af3_native_test.err
 
 # ============================================================
-# VALIDATION RUN — native install, custom MSA, 3 jobs only
+# VALIDATION RUN: native install, custom MSA, 3 jobs only
 #
 # Replaces 03b_af3_inference_custom_msa.pbs, which called AF3 through a
 # Singularity image that no longer exists on scratch. This runs the
 # conda-native install from install_af3_native.sh instead, so there are no
-# container paths (/root/af_input etc.) — everything is a real host path.
+# container paths (/root/af_input etc.): everything is a real host path.
 #
 # Purpose is unchanged: confirm that supplying our own Cas13d ortholog MSA
 # fixes the fold. The previous 500-job run returned mean pLDDT ~30,
-# pTM 0.19, ipTM 0.23 on every job — AF3 never folded CasRx, the signature
+# pTM 0.19, ipTM 0.23 on every job: AF3 never folded CasRx, the signature
 # of an empty protein MSA.
 #
 # DO NOT submit the full 533-job array until this returns usable pLDDT.
@@ -33,7 +33,7 @@
 # Submit with: qsub 03c_af3_inference_native.pbs
 # ============================================================
 
-echo "=== AF3 Inference — native install, custom MSA ==="
+echo "=== AF3 Inference, native install, custom MSA ==="
 echo "Start: $(date)"
 echo "Node:  $(hostname)"
 nvidia-smi 2>/dev/null || echo "WARNING: nvidia-smi not available"
@@ -115,7 +115,7 @@ done
 # ── Did the fix work? ─────────────────────────────────────────
 echo ""
 echo "============================================================"
-echo "RESULT — compare against the old run: pLDDT 30.4, pTM 0.19, ipTM 0.23"
+echo "RESULT, compare against the old run: pLDDT 30.4, pTM 0.19, ipTM 0.23"
 echo "============================================================"
 export OUTPUT_DIR
 python - <<'PYEOF'
@@ -130,7 +130,7 @@ for sc in sorted(glob.glob(os.path.join(out, "*", "*summary_confidences*.json"))
                  d.get("ptm"), d.get("iptm"), d.get("ranking_score")))
 
 if not rows:
-    print("No summary_confidences files found — inference produced no output.")
+    print("No summary_confidences files found, inference produced no output.")
 else:
     print(f"{'job':<45} {'pTM':>6} {'ipTM':>6} {'rank':>6}")
     for job, ptm, iptm, rank in rows:
@@ -138,11 +138,11 @@ else:
     ptms = [r[1] for r in rows if r[1] is not None]
     print(f"\nmean pTM = {st.mean(ptms):.3f}  (was 0.19)\n")
     if st.mean(ptms) > 0.5:
-        print(">>> FIXED. Fold recovered — proceed to the full 533-job array.")
+        print(">>> FIXED. Fold recovered, proceed to the full 533-job array.")
     elif st.mean(ptms) > 0.3:
         print(">>> PARTIAL. Better but weak; 53-sequence MSA depth may be the ceiling.")
     else:
-        print(">>> STILL BROKEN. MSA was not the (only) cause — do not submit")
+        print(">>> STILL BROKEN. MSA was not the (only) cause, do not submit")
         print("    the full array; investigate weights/install/input next.")
 PYEOF
 

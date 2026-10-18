@@ -35,7 +35,7 @@ for prefix, dest_dir in DEST_DIRS.items():
     os.makedirs(dest_dir, exist_ok=True)
     matches = [f for f in all_files if f.startswith(prefix + "/")]
     if not matches:
-        print(f"WARNING: no files found under {prefix}/ in the repo — skipping")
+        print(f"WARNING: no files found under {prefix}/ in the repo, skipping")
         continue
 
     print(f"\nDownloading {len(matches)} file(s) from {prefix}/ -> {dest_dir}")

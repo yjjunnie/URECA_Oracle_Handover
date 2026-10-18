@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# Boltz-2 batch inference — PBS array job
+# Boltz-2 batch inference: PBS array job
 #
 # Prerequisites:
 #   1. 01_test_boltz.pbs ran successfully (env + cuda OK)
@@ -63,7 +63,7 @@ end       = start + $BATCH_SIZE
 batch     = manifest.iloc[start:end]
 
 if len(batch) == 0:
-    print(f"Task $TASK_ID: no rows in manifest at offset {start} — nothing to do.")
+    print(f"Task $TASK_ID: no rows in manifest at offset {start}, nothing to do.")
     sys.exit(0)
 
 copied = 0
@@ -80,7 +80,7 @@ PYEOF
 
 N_YAMLS=$(ls "$BATCH_INPUT"/*.yaml 2>/dev/null | wc -l)
 if [ "$N_YAMLS" -eq 0 ]; then
-    echo "No YAMLs found — skipping boltz predict."
+    echo "No YAMLs found, skipping boltz predict."
     exit 0
 fi
 

@@ -27,7 +27,7 @@ WEIGHTS_DIR="/scratch/users/ntu/<YOUR_NSCC_ID>/af3_weights"                     
 # Check source file exists
 if [ ! -f "$WEIGHTS_ZST" ]; then
     echo "ERROR: Weight file not found: $WEIGHTS_ZST"
-    echo "Check the filename — list your scratch files with:"
+    echo "Check the filename, list your scratch files with:"
     echo "  ls \$SCRATCH/*.zst"
     exit 1
 fi
@@ -41,7 +41,7 @@ mkdir -p $WEIGHTS_DIR
 
 # Check zstd is available
 if ! command -v zstd &>/dev/null; then
-    echo "zstd not found in PATH — trying to load module"
+    echo "zstd not found in PATH, trying to load module"
     module load zstd 2>/dev/null || true
     if ! command -v zstd &>/dev/null; then
         echo "ERROR: zstd not available. Ask NSCC to install it, or run:"
@@ -55,7 +55,7 @@ echo ""
 
 # Decompress
 # The output filename must match what AF3 expects inside the weights dir.
-# AF3 looks for a file called af3_model_parameters.bin (or similar) —
+# AF3 looks for a file called af3_model_parameters.bin (or similar):
 # check your AF3 version's expected name if you get a "weights not found" error.
 # -d         decompress
 # -o         output file path
@@ -83,7 +83,7 @@ OUTFILE="$WEIGHTS_DIR/af3.bin"
 if [ -f "$OUTFILE" ]; then
     SIZE=$(du -sh $OUTFILE | cut -f1)
     echo ""
-    echo "Success — $OUTFILE ($SIZE)"
+    echo "Success, $OUTFILE ($SIZE)"
     echo ""
     echo "Next step: update AF3 weight path in PBS scripts if needed:"
     echo "  AF3_WEIGHTS=\"\$SCRATCH/af3_weights\""

@@ -70,7 +70,7 @@ echo ""
 
 # ── Create venv in scratch ────────────────────────────────────
 if [ -d "$ENV_PATH" ]; then
-    echo "Env already exists at $ENV_PATH — skipping create"
+    echo "Env already exists at $ENV_PATH, skipping create"
 else
     echo "Creating venv: $ENV_PATH"
     python3 -m venv "$ENV_PATH"
@@ -94,7 +94,7 @@ echo ""
 # Boltz expects the mols/ directory in the cache, not the tar file.
 echo "=== Extracting mols.tar ==="
 if [ -d "$BOLTZ_CACHE/mols" ]; then
-    echo "  mols/ already extracted — skipping"
+    echo "  mols/ already extracted, skipping"
 else
     tar -xf "$BOLTZ_CACHE/mols.tar" -C "$BOLTZ_CACHE/"
     echo "  Extracted to $BOLTZ_CACHE/mols/"

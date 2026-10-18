@@ -7,7 +7,7 @@
 #PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/inf_b_^array_index^.err
 
 # ============================================================
-# Job 3 of 4: AF3 Inference — 10 complexes per job
+# Job 3 of 4: AF3 Inference: 10 complexes per job
 #
 # Loops over 10 JSONs in the batch dir, calling AF3 once per
 # JSON with --output_dir pointing to each job's MSA subdir

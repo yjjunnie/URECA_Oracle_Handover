@@ -15,7 +15,7 @@ Your HF token:
 import os
 from huggingface_hub import HfApi, create_repo
 
-# ── CONFIG — edit these two lines ─────────────────────────────────────────────
+# ── CONFIG: edit these two lines ─────────────────────────────────────────────
 HF_TOKEN  = os.environ["HF_TOKEN"]  # was hardcoded; read from env instead
 HF_REPO   = "yjjunnie/ureca-boltz-data"
 # ──────────────────────────────────────────────────────────────────────────────

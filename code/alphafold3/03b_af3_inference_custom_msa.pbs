@@ -6,11 +6,11 @@
 #PBS -e /scratch/users/ntu/<YOUR_NSCC_ID>/logs/af3_msa_test.err
 
 # ============================================================
-# VALIDATION RUN — custom MSA, 3 jobs only
+# VALIDATION RUN: custom MSA, 3 jobs only
 #
 # Purpose: confirm that supplying our own Cas13d ortholog MSA fixes the
 # fold. The previous 500-job run returned mean pLDDT ~30, pTM 0.19,
-# ipTM 0.23 across every job — AF3 never folded CasRx, the signature of
+# ipTM 0.23 across every job: AF3 never folded CasRx, the signature of
 # an empty protein MSA.
 #
 # DO NOT submit the full 533-job array until this comes back with
@@ -21,7 +21,7 @@
 #   1. No MSA step. The input JSONs now carry the MSA inline
 #      (unpairedMsa = 53-sequence A3M, pairedMsa = "", templates = []),
 #      so 02_af3_msa.pbs is not run and no _data.json is needed.
-#   2. --resolve_msa_overlaps=false  — required when supplying a custom
+#   2. --resolve_msa_overlaps=false: required when supplying a custom
 #      unpaired MSA, else AF3's deduplication can disturb it
 #      (docs/input.md, "MSA Pairing").
 #   3. Output goes to a fresh dir, not the old af3_outputs_msa tree.
@@ -29,7 +29,7 @@
 # Submit with: qsub 03b_af3_inference_custom_msa.pbs
 # ============================================================
 
-echo "=== AF3 Inference — custom MSA validation ==="
+echo "=== AF3 Inference, custom MSA validation ==="
 echo "Start: $(date)"
 echo "Node:  $(hostname)"
 nvidia-smi 2>/dev/null || echo "WARNING: nvidia-smi not available"
@@ -122,7 +122,7 @@ done
 # ── Did the fix work? ─────────────────────────────────────────
 echo ""
 echo "============================================================"
-echo "RESULT — compare against the old run: pLDDT 30.4, pTM 0.19, ipTM 0.23"
+echo "RESULT, compare against the old run: pLDDT 30.4, pTM 0.19, ipTM 0.23"
 echo "============================================================"
 export OUTPUT_DIR
 python3 - <<'PYEOF'
@@ -137,7 +137,7 @@ for sc in sorted(glob.glob(os.path.join(out, "*", "*summary_confidences*.json"))
     rows.append((job, d.get("ptm"), d.get("iptm"), d.get("ranking_score")))
 
 if not rows:
-    print("No summary_confidences files found — inference did not produce output.")
+    print("No summary_confidences files found, inference did not produce output.")
 else:
     print(f"{'job':<45} {'pTM':>6} {'ipTM':>6} {'rank':>6}")
     for job, ptm, iptm, rank in rows:
@@ -147,11 +147,11 @@ else:
     print(f"mean pTM = {st.mean(ptms):.3f}  (was 0.19)")
     print()
     if st.mean(ptms) > 0.5:
-        print(">>> FIXED. Fold recovered — proceed to the full array.")
+        print(">>> FIXED. Fold recovered, proceed to the full array.")
     elif st.mean(ptms) > 0.3:
         print(">>> PARTIAL. Better but still weak; MSA depth may be the limit.")
     else:
-        print(">>> STILL BROKEN. The MSA was not the (only) cause — do not")
+        print(">>> STILL BROKEN. The MSA was not the (only) cause, do not")
         print("    submit the full array; investigate weights/container/input.")
 PYEOF
 

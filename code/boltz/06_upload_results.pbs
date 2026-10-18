@@ -25,7 +25,7 @@ PIP_STATUS=$?
 echo "pip install exit status: $PIP_STATUS"
 "$ENV_PATH/bin/python" -c "import huggingface_hub; print('huggingface_hub OK ->', huggingface_hub.__file__)"
 if [ $? -ne 0 ]; then
-    echo "ERROR: huggingface_hub still broken — check for a shadowing file/dir on sys.path"
+    echo "ERROR: huggingface_hub still broken, check for a shadowing file/dir on sys.path"
     exit 1
 fi
 

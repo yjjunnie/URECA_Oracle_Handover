@@ -240,7 +240,7 @@ print(f"Scatter plots saved: {scatter_path}")
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 print("\n" + "=" * 80)
-print("SUMMARY — top 5 metrics by |Spearman ρ| (averaged across datasets)")
+print("SUMMARY, top 5 metrics by |Spearman ρ| (averaged across datasets)")
 print("=" * 80)
 summary = (
     corr_df.groupby("metric")["spearman_r"]

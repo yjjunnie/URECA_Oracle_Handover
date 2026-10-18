@@ -59,7 +59,7 @@ done
 if [ $FAILED -eq 0 ]; then
     echo "  All jobs completed"
 else
-    echo "  $FAILED jobs missing output — check their log files"
+    echo "  $FAILED jobs missing output, check their log files"
     echo "  Proceeding with $COMPLETED completed jobs"
 fi
 

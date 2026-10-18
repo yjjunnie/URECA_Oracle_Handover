@@ -15,16 +15,16 @@ Definitions for terms used throughout this file.
 | Term | Meaning |
 |---|---|
 | **NSCC ASPIRE** | The national supercomputer the project has an allocation on. Login happens on a *login node*; work runs on separate *compute nodes*. |
-| **PBS** | The job scheduler. Programs are not run directly — a script is submitted to a queue, and PBS runs it on a compute node once resources free up. Delay ranges from seconds to hours. |
+| **PBS** | The job scheduler. Programs are not run directly, a script is submitted to a queue, and PBS runs it on a compute node once resources free up. Delay ranges from seconds to hours. |
 | **`qsub`** | Submits a script to the queue. `qstat` reports status; `qdel` cancels. |
 | **walltime** | Maximum real-world runtime allowed. On exceeding it, PBS kills the job immediately with no output. Pad all estimates. |
-| **scratch** | `/scratch/users/ntu/<YOUR_NSCC_ID>/` — large, fast storage for data and outputs. **Wiped periodically.** Home directories are permanent but small. |
+| **scratch** | `/scratch/users/ntu/<YOUR_NSCC_ID>/`, large, fast storage for data and outputs. **Wiped periodically.** Home directories are permanent but small. |
 | **array job** | One script submitted as many numbered tasks (`#PBS -J 0-49`), so 500 complexes run as 50 parallel jobs rather than 500 separate submissions. |
 | **module** | Cluster software is not installed globally; it is loaded per job with e.g. `module load cuda/12.8.1`. `module avail` lists what exists. |
-| **MSA** | Multiple sequence alignment: a stack of evolutionarily related protein sequences, used by structure predictors to infer intra-protein contacts. A protein with no MSA folds badly — the cause of the project's largest problem; see the main README. |
+| **MSA** | Multiple sequence alignment: a stack of evolutionarily related protein sequences, used by structure predictors to infer intra-protein contacts. A protein with no MSA folds badly: the cause of the project's largest problem; see the main README. |
 | **pLDDT / pTM / ipTM** | Structure predictor confidence scores. pLDDT is per-residue on a 0–100 scale (above ~70 is usable; ~30 indicates no usable prediction). pTM scores the whole structure 0–1; ipTM scores the *interface* between chains. |
 
-Practical details — PBS header construction, cache redirection, array job mechanics — are in
+Practical details, PBS header construction, cache redirection, array job mechanics, are in
 [`../docs/02_nscc_job_scripts.md`](../docs/02_nscc_job_scripts.md). Read it before
 submitting anything.
 
@@ -56,7 +56,7 @@ Procedure, once on NSCC:
    ```
 
 3. Create the log directory. PBS does not create it, and a job whose log directory is
-   missing dies **silently, with no output of any kind** — the most confusing failure mode
+   missing dies **silently, with no output of any kind**: the most confusing failure mode
    on this cluster:
 
    ```bash
@@ -78,13 +78,13 @@ Models were deliberately not copied into this repository: vendored copies go sta
 history, and obscure which code is original to the project. Clone them fresh.
 
 ```bash
-# Boltz-2 — no clone needed, it's on PyPI
+# Boltz-2: no clone needed, it's on PyPI
 pip install boltz
 
-# AlphaFold3 — code only. Weights download separately; see the weights table in docs/06.
+# AlphaFold3: code only. Weights download separately; see the weights table in docs/06.
 git clone https://github.com/google-deepmind/alphafold3.git
 
-# TIGER — --recursive matters, the weights come via a Git LFS submodule
+# TIGER: --recursive matters, the weights come via a Git LFS submodule
 git clone --recursive https://github.com/daklab/tiger.git
 
 # ProGen3
@@ -99,7 +99,7 @@ git clone https://github.com/MicrosoftResearch/Azimuth.git
 
 A table of which models additionally require **manually downloaded weights**, with sizes and
 the reason each is excluded, is in
-[`../docs/06_script_legend.md` §9.2](../docs/06_script_legend.md#92-model-weights--all-require-manual-download).
+[`../docs/06_script_legend.md` §9.2](../docs/06_script_legend.md#92-model-weights-all-require-manual-download).
 No weights are in this repository.
 
 **Versions used in this project**, worth pinning, as a newer upstream release may not match
@@ -119,7 +119,7 @@ Relevant to any republication of this work; the terms are not uniform.
 | ProGen3 (code) | Apache 2.0 | Yes, retain NOTICE/licence |
 | ESM / ESMFold | MIT | Yes |
 | Azimuth | BSD-style (Microsoft Research) | Yes, retain notice |
-| AlphaFold3 (code) | CC BY-NC-SA 4.0 | Non-commercial, attribution, **and ShareAlike** — republication can oblige licensing original additions under the same terms |
+| AlphaFold3 (code) | CC BY-NC-SA 4.0 | Non-commercial, attribution, **and ShareAlike**: republication can oblige licensing original additions under the same terms |
 | **TIGER** | **NYGC single-user, academic only** | **No** |
 
 TIGER is therefore a hard blocker, and AF3's ShareAlike clause is an obligation incurred for
@@ -131,7 +131,7 @@ already excludes `*.ckpt`, `*.tar` and similar.
 
 ---
 
-## 3a. Dependencies — read the upstream install docs first
+## 3a. Dependencies: read the upstream install docs first
 
 **Begin with each project's own README and installation docs on GitHub, every time.** Those
 are maintained, updated when a dependency breaks, and authoritative. What follows is *not* a
@@ -143,7 +143,7 @@ general shape of the problem: NSCC login nodes have an old toolchain, there is n
 access, and compute nodes have no outbound internet. Nearly every issue below reduces to one
 of those three.
 
-### 3a.1 AlphaFold 3 — the largest time sink
+### 3a.1 AlphaFold 3: the largest time sink
 
 Read `alphafold3/docs/installation.md` upstream first, then `install_af3_native.sh` here,
 whose header comments explain each workaround.
@@ -152,8 +152,8 @@ whose header comments explain each workaround.
 |---|---|
 | The official route requires `docker build` and a local Docker registry. **Both need root.** | Container abandoned. Installed natively with conda. |
 | System `gcc` is **8.5.0** (2021), too old to compile `libcifpp`/`dssp`, which need C++17/20. | `conda install -c conda-forge gcc_linux-64 gxx_linux-64` provides gcc 12+ without root. Re-activate the environment afterwards so `CC`/`CXX` are exported, then assert `gcc >= 11`. |
-| System `cmake` is 3.26.5; `pyproject.toml` requires **>= 3.28**. | Not an issue in practice — pip's build isolation fetches its own `cmake` + `ninja` wheels. Do not override it. |
-| `pip install .` compiles C++ extensions — slow. | 10–30 minutes. **Run on a compute node**, not the login node, or CPU limits will kill it. No GPU required to build. |
+| System `cmake` is 3.26.5; `pyproject.toml` requires **>= 3.28**. | Not an issue in practice, pip's build isolation fetches its own `cmake` + `ninja` wheels. Do not override it. |
+| `pip install .` compiles C++ extensions: slow. | 10–30 minutes. **Run on a compute node**, not the login node, or CPU limits will kill it. No GPU required to build. |
 | Half the AF3 Dockerfile builds HMMER from source. | Skipped. HMMER serves only the data pipeline (`jackhmmer`/`nhmmer` MSA search), and a custom MSA was supplied instead. |
 | The genetic databases are **~600 GB**. | Skipped, via `--norun_data_pipeline`. |
 
@@ -176,7 +176,7 @@ export XLA_CLIENT_MEM_FRACTION=0.95
 > model.** Check `chain_ptm` for the protein chain on the first complex before launching
 > 500.
 
-### 3a.2 ProGen3 — the prebuilt wheel
+### 3a.2 ProGen3: the prebuilt wheel
 
 **`flash-attention` does not reliably compile on NSCC.** Building from source is a long
 C++/CUDA build that failed repeatedly, so a prebuilt wheel pinned to the exact
@@ -204,7 +204,7 @@ One correction was made to that script during handover: the first verification l
 `torch.cuda.is_available__()` (two underscores), which would raise `AttributeError` instead
 of reporting CUDA status. That is the explanation for any such error seen previously.
 
-### 3a.3 Boltz-2 — straightforward apart from torch/CUDA
+### 3a.3 Boltz-2: straightforward apart from torch/CUDA
 
 `pip install boltz` on Python 3.11 is nearly sufficient. The one recurring failure is torch
 built against a different CUDA version than the node provides. `01_test_boltz.pbs` detects
@@ -215,20 +215,20 @@ Two non-obvious pins in that fix script, both established by trial and error:
 
 - `cuequivariance-torch` and `cuequivariance-ops-torch-cu12` install with `--no-deps`;
   otherwise pip pulls in CUDA toolkit 13 and breaks the rest of the environment.
-- `nvidia-cublas-cu12>=12.5` — `cuequivariance` calls `cublasGemmGroupedBatchedEx`, which
+- `nvidia-cublas-cu12>=12.5`, `cuequivariance` calls `cublasGemmGroupedBatchedEx`, which
   exists only from cuBLAS 12.5. Upgrading cuBLAS alone remains within the CUDA 12 family.
 
 Weights (`boltz2_conf.ckpt`, `mols.tar`) must be transferred in manually via `scp`, as
 compute nodes cannot download them. For the same reason, `--use_msa_server` works only from
 a login node.
 
-### 3a.4 TIGER — the Python version trap
+### 3a.4 TIGER: the Python version trap
 
 **TIGER requires Python 3.9 and TensorFlow 2.11.** Not 3.11, and not a newer TensorFlow.
 Resolving this consumed an afternoon before an old Python was installed alongside the main
 one; `tiger/QUICK_START.md` contains the walkthrough and `install_with_venv.bat` automates
 it on Windows. `requirements.txt` is fully pinned (`pandas==1.5.2`, `biopython==1.80`,
-`shap==0.42.1`, …) — do not unpin it to satisfy another package.
+`shap==0.42.1`, …); do not unpin it to satisfy another package.
 
 Model weights arrive through a **Git LFS submodule**. Install Git LFS *before* cloning and
 use `git clone --recursive`. Cloning incorrectly leaves the weights silently absent,
@@ -244,7 +244,7 @@ home directory and exhausts the quota. See `esmfold/00_diagnose_plddt.pbs`.
 Escalation order:
 
 1. The upstream repository's `installation.md` or README.
-2. Its GitHub **Issues**, including closed ones — most CUDA/compiler combinations have
+2. Its GitHub **Issues**, including closed ones, most CUDA/compiler combinations have
    already been encountered by someone.
 3. `module avail` on NSCC, to see which toolchains currently exist, as the ones used here
    may have moved.
@@ -266,7 +266,7 @@ yjjunnie/ureca-boltz-data
 └── results_balanced/  the balanced re-analysis → boltz/correlation_results/balanced/
 ```
 
-Access to this repo must be requested from the project supervisor, or a new repo created —
+Access to this repo must be requested from the project supervisor, or a new repo created,
 `upload_to_hf.py` creates one if it does not exist.
 
 ### 4.1 Creating a token
@@ -278,7 +278,7 @@ to upload, and to download from a private repo.
 2. Avatar → **Settings** → **Access Tokens**.
 3. **Create new token.** Select **Write** for uploading results; **Read** suffices for
    downloading only.
-4. Copy it immediately — Hugging Face displays it once. Format: `hf_AbCd1234...`.
+4. Copy it immediately, Hugging Face displays it once. Format: `hf_AbCd1234...`.
 
 ### 4.2 Using a token without hardcoding it
 
@@ -292,7 +292,7 @@ NSCC / Linux:
 export HF_TOKEN="hf_your_token_here"
 ```
 
-To persist it between logins, add that line to `~/.bashrc` — in the home directory, *not*
+To persist it between logins, add that line to `~/.bashrc`, in the home directory, *not*
 the repo.
 
 PBS jobs do not inherit the shell environment by default, so the variable must be passed
@@ -343,32 +343,32 @@ DEST_DIRS = {
 
 ## 5. The scripts
 
-For a single consolidated legend of every script — with its model, purpose, run order, and
-whether it belongs on a GPU node, a CPU node or the login node — see
+For a single consolidated legend of every script, with its model, purpose, run order, and
+whether it belongs on a GPU node, a CPU node or the login node, see
 [`../docs/06_script_legend.md`](../docs/06_script_legend.md). That file also introduces each
 model for a reader meeting it for the first time, and inventories everything that must be
 downloaded manually. The sections below are the per-directory detail.
 
-### 5.1 `boltz/` — start here
+### 5.1 `boltz/`: start here
 
 The cleanest pipeline in the project, and the one to copy when adding a new model. Run the
 numbered scripts in order.
 
 | Script | Function and rationale |
 |---|---|
-| `00_install_boltz.pbs` | Builds the Python environment and unpacks the ligand cache. CPU-only by design — installation takes 30+ minutes and does not warrant GPU time. Safe to re-run; it skips completed work. |
+| `00_install_boltz.pbs` | Builds the Python environment and unpacks the ligand cache. CPU-only by design, installation takes 30+ minutes and does not warrant GPU time. Safe to re-run; it skips completed work. |
 | `01_test_boltz.pbs` | Folds one small complex as a smoke test. **Do not skip.** It prints the key names from the output JSON, which are prerequisites for writing any parser. Guessing key names and then re-running 1,300 GPU jobs is the error this avoids. |
 | `02_fix_torch_cuda.pbs` | Required only if `torch.cuda.is_available()` returns `False`. Reinstalls PyTorch against the CUDA version actually present on the node. |
 | `generate_yamls.py` / `.pbs` | Builds one input YAML per guide, plus a `manifest.tsv` listing all of them. Its final line prints the exact `#PBS -J` range for the next script; use that rather than counting manually. |
 | `03_boltz_batch.pbs` | The inference stage. An array job, 20 guides per task. Each task copies its inputs to a private folder first, so parallel tasks do not collide. |
 | `04_analyze.py` + `05_analyze.pbs` | Parses the confidence JSONs, correlates every metric against guide activity, and writes the CSVs and plots. The `.py` performs the work; the `.pbs` runs it in a lightweight CPU environment. |
-| `04b_analyze_balanced.py` + `05b_analyze_balanced.pbs` | The same analysis, subsampled to 85 guides per Cas protein so datasets are comparable. **This is the authoritative version** — the unbalanced analysis confounds dataset with protein. |
-| `06_upload_results.pbs` + `upload_to_hf.py` | Pushes results to Hugging Face. Run as the final stage of every pipeline, not deferred — scratch is wiped. |
+| `04b_analyze_balanced.py` + `05b_analyze_balanced.pbs` | The same analysis, subsampled to 85 guides per Cas protein so datasets are comparable. **This is the authoritative version**: the unbalanced analysis confounds dataset with protein. |
+| `06_upload_results.pbs` + `upload_to_hf.py` | Pushes results to Hugging Face. Run as the final stage of every pipeline, not deferred, because scratch is wiped. |
 | `download_from_hf.py` / `.pbs` | Pulls input data and scripts *onto* NSCC. **Use the `.py` on a login node.** Compute nodes have no outbound internet, so the `.pbs` variant cannot reach Hugging Face. |
 | `download_results_from_hf.py` | Pulls finished results back to Windows. Subject to the bug in section 4.4. |
-| `Boltz_Inference_Guide.ipynb` | Design notes from porting the AF3 setup to Boltz: differences between the two input formats, reconstruction of target sequences from spacers, the Azimuth `30mer` parsing rule, and the direct-repeat sequences. **Contains no saved outputs — notes, not results.** Read before modifying `generate_yamls.py`. |
+| `Boltz_Inference_Guide.ipynb` | Design notes from porting the AF3 setup to Boltz: differences between the two input formats, reconstruction of target sequences from spacers, the Azimuth `30mer` parsing rule, and the direct-repeat sequences. **Contains no saved outputs: notes, not results.** Read before modifying `generate_yamls.py`. |
 
-### 5.2 `alphafold3/` — read the warning first
+### 5.2 `alphafold3/`: read the warning first
 
 **Prerequisite: the AF3 warning in the [main README](../README.md).** The production run
 here folded CasRx with an empty MSA, and its results are unreliable. The fix exists but was
@@ -380,7 +380,7 @@ Setup, in order:
 |---|---|
 | `00_decompress_weights.pbs` | Unpacks the compressed AF3 weights into scratch. Run once, before anything else. |
 | `01_fill_casrx.pbs` + `fill_casrx_sequence.py` | Fetches the CasRx sequence from UniProt and substitutes it into the input JSONs, which ship with a placeholder. |
-| `02_af3_msa.pbs` | Runs AF3's database search to build the MSA. CPU-only — this stage does not touch the neural network, so no GPU should be requested. **This is the stage that silently failed.** |
+| `02_af3_msa.pbs` | Runs AF3's database search to build the MSA. CPU-only: this stage does not touch the neural network, so no GPU should be requested. **This is the stage that silently failed.** |
 | `reorganise_batches.py` | Shards 500 input JSONs into 50 folders of 10, so inference can run as a 50-task array job. |
 
 Then select an inference route:
@@ -389,7 +389,7 @@ Then select an inference route:
 |---|---|
 | `03_af3_inference_batched.pbs` | The original. **This produced the broken run.** Retained only as a reference for the array-job batching pattern. |
 | `03b_af3_inference_custom_msa.pbs` | The custom-MSA fix, run through a Singularity container. **The required container image no longer exists on scratch**, so this will not run as-is. Retained as a worked container example. |
-| **`03c_af3_inference_native.pbs`** + `install_af3_native.sh` | **Start here.** The same custom-MSA job as `03b` — same inputs, same outputs — but installed natively with conda rather than containerised. It also has a better preflight: it verifies the weights exist, verifies `import alphafold3` works, and prints `jax.devices()` before committing to a run. |
+| **`03c_af3_inference_native.pbs`** + `install_af3_native.sh` | **Start here.** The same custom-MSA job as `03b`, same inputs, same outputs, but installed natively with conda rather than containerised. It also has a better preflight: it verifies the weights exist, verifies `import alphafold3` works, and prints `jax.devices()` before committing to a run. |
 
 `03b` and `03c` are functionally identical; they differ only in how AF3 is installed. Use
 `03c` unless the container image has been rebuilt.
@@ -412,7 +412,7 @@ Analysis:
 
 | Script | Function |
 |---|---|
-| `00_diagnose_plddt.py` + `.pbs` | **Unfinished — the easiest component to pick up.** ESMFold was reporting ~30 average pLDDT on ordinary proteins, which cannot be correct. This folds reference proteins of known expected confidence (ubiquitin and GB1 should score 85–95; α-synuclein is genuinely disordered and should score 25–40) and prints four methods of averaging pLDDT side by side. A ubiquitin score near 90 indicates the pipeline is sound and the wrong statistic was being read; a score near 30 indicates a genuine defect. Each protein is folded both alone and in a batch, to detect padding contamination. |
+| `00_diagnose_plddt.py` + `.pbs` | **Unfinished, the easiest component to pick up.** ESMFold was reporting ~30 average pLDDT on ordinary proteins, which cannot be correct. This folds reference proteins of known expected confidence (ubiquitin and GB1 should score 85–95; α-synuclein is genuinely disordered and should score 25–40) and prints four methods of averaging pLDDT side by side. A ubiquitin score near 90 indicates the pipeline is sound and the wrong statistic was being read; a score near 30 indicates a genuine defect. Each protein is folded both alone and in a batch, to detect padding contamination. |
 
 ### 5.4 `progen3/`
 
@@ -420,7 +420,7 @@ Working, but never pointed at the Cas13 orthologs; that experiment remains open.
 
 | File | Purpose |
 |---|---|
-| `NSCC_GUIDE.md` | A standalone walkthrough: SSH access, setup, submission, monitoring, result retrieval. **The best starting point for anyone new to NSCC** — it assumes no prior knowledge. |
+| `NSCC_GUIDE.md` | A standalone walkthrough: SSH access, setup, submission, monitoring, result retrieval. **The best starting point for anyone new to NSCC**: it assumes no prior knowledge. |
 | `nscc_setup.sh` | Builds the conda environment. Run once. |
 | `nscc_score_job.sh` | Scores sequences from a FASTA file. Edit the config block near the top to specify the input. |
 | `nscc_generate_job.sh` | Generates new sequences rather than scoring existing ones. |

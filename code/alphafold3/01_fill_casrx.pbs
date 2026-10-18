@@ -48,7 +48,7 @@ echo "Files found: $(ls $JSON_DIR/*.json 2>/dev/null | wc -l)"
 python3 $SCRIPT --json_dir $JSON_DIR
 
 echo ""
-echo "Verification — checking one JSON:"
+echo "Verification, checking one JSON:"
 python3 -c "
 import json, glob
 files = sorted(glob.glob('$JSON_DIR/*.json'))
