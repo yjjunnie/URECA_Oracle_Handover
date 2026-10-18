@@ -140,7 +140,9 @@ docs will never cover because they assume root access and a conventional machine
 
 Dependencies consumed more project time than any scientific work. Budget accordingly. The
 general shape of the problem: NSCC login nodes have an old toolchain, there is no root
-access, and compute nodes have no outbound internet. Nearly every issue below reduces to one
+access, and compute nodes were assumed to have no outbound internet (doubtful, see
+[`../docs/06_script_legend.md` §1.2](../docs/06_script_legend.md#12-network-access-from-compute-nodes-unresolved)).
+Nearly every issue below reduces to one
 of those three.
 
 ### 3a.1 AlphaFold 3: the largest time sink
@@ -218,9 +220,9 @@ Two non-obvious pins in that fix script, both established by trial and error:
 - `nvidia-cublas-cu12>=12.5`, `cuequivariance` calls `cublasGemmGroupedBatchedEx`, which
   exists only from cuBLAS 12.5. Upgrading cuBLAS alone remains within the CUDA 12 family.
 
-Weights (`boltz2_conf.ckpt`, `mols.tar`) must be transferred in manually via `scp`, as
-compute nodes cannot download them. For the same reason, `--use_msa_server` works only from
-a login node.
+Weights (`boltz2_conf.ckpt`, `mols.tar`) must be transferred in manually via `scp`, because
+of their size and download mechanism. `--use_msa_server` was likewise used only from a login
+node.
 
 ### 3a.4 TIGER: the Python version trap
 
@@ -364,7 +366,7 @@ numbered scripts in order.
 | `04_analyze.py` + `05_analyze.pbs` | Parses the confidence JSONs, correlates every metric against guide activity, and writes the CSVs and plots. The `.py` performs the work; the `.pbs` runs it in a lightweight CPU environment. |
 | `04b_analyze_balanced.py` + `05b_analyze_balanced.pbs` | The same analysis, subsampled to 85 guides per Cas protein so datasets are comparable. **This is the authoritative version**: the unbalanced analysis confounds dataset with protein. |
 | `06_upload_results.pbs` + `upload_to_hf.py` | Pushes results to Hugging Face. Run as the final stage of every pipeline, not deferred, because scratch is wiped. |
-| `download_from_hf.py` / `.pbs` | Pulls input data and scripts *onto* NSCC. **Use the `.py` on a login node.** Compute nodes have no outbound internet, so the `.pbs` variant cannot reach Hugging Face. |
+| `download_from_hf.py` / `.pbs` | Pulls input data and scripts *onto* NSCC. **Use the `.py` on a login node.** The `.pbs` variant is documented as unable to reach Hugging Face, though that premise is doubtful: see [`../docs/06_script_legend.md` §1.2](../docs/06_script_legend.md#12-network-access-from-compute-nodes-unresolved). |
 | `download_results_from_hf.py` | Pulls finished results back to Windows. Subject to the bug in section 4.4. |
 | `Boltz_Inference_Guide.ipynb` | Design notes from porting the AF3 setup to Boltz: differences between the two input formats, reconstruction of target sequences from spacers, the Azimuth `30mer` parsing rule, and the direct-repeat sequences. **Contains no saved outputs: notes, not results.** Read before modifying `generate_yamls.py`. |
 

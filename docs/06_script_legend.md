@@ -44,8 +44,48 @@ The "Runs on" column in the tables below uses these values.
 |---|---|---|
 | **GPU node** | `#PBS -l select=...:ngpus=1`, submitted with `qsub` | Requesting no GPU makes the model fall back to CPU and run orders of magnitude slower, or crash. |
 | **CPU node** | `#PBS -l select=...` with no `ngpus`, submitted with `qsub` | Requesting a GPU for these wastes allocation; queue times are also longer. |
-| **Login node** | Run directly, not submitted | Compute nodes have **no outbound internet**. Anything that downloads or uploads must run here. |
+| **Login node** | Run directly, not submitted | The project's working assumption was that compute nodes have no outbound internet, so anything downloading or uploading runs here. **That assumption looks wrong and is untested**, see §1.2. |
 | **Local (Windows)** | Run on a personal machine | TIGER and the result-retrieval scripts were run locally, not on the cluster. |
+
+### 1.2 Network access from compute nodes: unresolved
+
+The docs in this repository repeatedly state that **compute nodes have no outbound
+internet**. Several scripts here contradict that, and the contradiction has never been
+tested. It is recorded rather than resolved, because resolving it needs cluster access.
+
+**Evidence that compute nodes do reach the network:**
+
+| Script | Network operation on a compute node | Outcome |
+|---|---|---|
+| `boltz/00_install_boltz.pbs:88` | `pip install boltz` | Worked. Boltz was installed this way and 1,296 complexes were folded with it. |
+| `boltz/02_fix_torch_cuda.pbs:36` | `pip install torch` from an index URL | Worked. It is the documented CUDA fix. |
+| `boltz/06_upload_results.pbs:58` | `api.upload_file` to Hugging Face | Worked. The results are in the Hugging Face repo. |
+| `alphafold3/04_analyze.pbs:32` | `pip install scipy pandas numpy matplotlib` | Worked. It produced the committed AF3 results. |
+| `esmfold/00_diagnose_plddt.pbs:46` | `pip install` from `download.pytorch.org` | Untested, the script was never run to completion. |
+| `boltz/01_test_boltz.pbs:92` | `--use_msa_server`, on a **GPU** job | Contradicts the claim that the MSA server needs a login node. |
+
+If compute nodes had no route out, `00_install_boltz.pbs` could not have installed Boltz and
+the project would have stopped at its first step.
+
+**The likely narrower truth.** `06_upload_results.pbs` and `download_from_hf.pbs`, and only
+those two, set `HF_HUB_DISABLE_XET=1`. Xet is Hugging Face's newer storage backend. That
+flag is the fingerprint of a real failure against Xet's specific endpoints, which appears to
+have been generalised into "no outbound internet" and written into the docs. General HTTPS
+probably works; some Hugging Face transfer endpoints probably do not.
+
+**What is still probably true for its own reasons:** the AF3 weights and `mols.tar` should
+be transferred with `scp`, because of their size and download mechanism, not because of a
+blanket network block.
+
+**How to settle it.** Submit a five-minute job that curls `https://pypi.org/simple/`,
+`https://huggingface.co` and `https://cas-server.xethub.hf.co`, and prints `$http_proxy`.
+Two successes and one failure confirms the Xet explanation. Then correct this section and
+the statements that point at it.
+
+**Why it matters, beyond tidiness:** if compute nodes do have network access, then the
+decision to run all 1,296 Boltz complexes without an MSA rested on a false premise. That
+decision is what limits the project's main result to *MSA-free* prediction. See
+[`05_next_steps.md` §1.0b](05_next_steps.md#10b-decide-whether-boltz-should-be-re-run-with-msas-too).
 
 ---
 
@@ -68,7 +108,7 @@ Run the numbered scripts in order.
 | Order | Script | Type | Runs on | Purpose |
 |---|---|---|---|---|
 | n/a | `download_from_hf.py` | Python | **Login node** | Downloads the input datasets and script copies from the Hugging Face dataset repo onto NSCC. Run before anything else. |
-| n/a | `download_from_hf.pbs` | PBS | CPU node | Job-script wrapper for the above. **Will fail**: compute nodes cannot reach Hugging Face. Use the `.py` on the login node instead. |
+| n/a | `download_from_hf.pbs` | PBS | CPU node | Job-script wrapper for the above. **Documented as failing** on the grounds that compute nodes cannot reach Hugging Face, but see §1.2: that premise is doubtful and this was likely never tried. Use the `.py` on the login node unless §1.2 is resolved. |
 | 00 | `00_install_boltz.pbs` | PBS | CPU node | Builds the Python environment and unpacks the ligand cache. CPU-only by design: installation takes 30+ minutes and does not need a GPU. Safe to re-run; skips completed work. |
 | 01 | `01_test_boltz.pbs` | PBS | GPU node | Folds one small complex as a smoke test. **Do not skip.** It prints the key names in the output JSON, which are required before any parser can be written. Guessing them and re-running 1,300 GPU jobs is the error this prevents. |
 | 02 | `02_fix_torch_cuda.pbs` | PBS | CPU node | Only needed if `torch.cuda.is_available()` returns `False`. Reinstalls PyTorch against the CUDA version the node actually provides. Set `CUDA_TAG` to match `nvidia-smi`. |
@@ -79,7 +119,7 @@ Run the numbered scripts in order.
 | 05 | `05_analyze.pbs` | PBS | CPU node | Runs `04_analyze.py` in a lightweight CPU environment. |
 | 04b | `04b_analyze_balanced.py` | Python | CPU node | The same analysis, subsampled to 85 guides per Cas protein. **This is the authoritative version**: the unbalanced analysis confounds dataset with protein. |
 | 05b | `05b_analyze_balanced.pbs` | PBS | CPU node | Runs `04b_analyze_balanced.py`. |
-| 06 | `06_upload_results.pbs` + `upload_to_hf.py` | PBS + Python | See note | Pushes results to Hugging Face. Run as the **final stage of every pipeline**, because scratch is wiped. This is submitted as a PBS job but needs outbound internet, which contradicts the rule above. Verify it can reach Hugging Face before relying on it; if not, run `upload_to_hf.py` from the login node. |
+| 06 | `06_upload_results.pbs` + `upload_to_hf.py` | PBS + Python | See note | Pushes results to Hugging Face. Run as the **final stage of every pipeline**, because scratch is wiped. Submitted as a PBS job yet needs outbound internet, and it evidently worked: see §1.2, where this is the main evidence against the no-internet rule. |
 | n/a | `download_results_from_hf.py` | Python | Local (Windows) | Pulls finished results back to a personal machine. **Has a known unfixed bug**: see [`../code/README.md` §4.4](../code/README.md#44-known-unfixed-bug). |
 | n/a | `Boltz_Inference_Guide.ipynb` | Notebook | Reference only | Design notes from porting the AF3 setup to Boltz: the two input formats, reconstructing target sequences from spacers, the Azimuth `30mer` parsing rule, the direct-repeat sequences. **No saved outputs: notes, not results.** Read before modifying `generate_yamls.py`. |
 
@@ -301,8 +341,9 @@ Terms: https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_
 
 Two cluster rules govern all of the above:
 
-1. **Compute nodes have no outbound internet.** Every download happens on a login node, then
-   moves to scratch. For the same reason Boltz's `--use_msa_server` works only from a login
+1. **Compute nodes were assumed to have no outbound internet** (doubtful, see §1.2).
+   Every download in this project was therefore done on a login node, then
+   moved to scratch. The same assumption is why Boltz's `--use_msa_server` was used only from a login
    node.
 2. **Large `scp` transfers to NSCC stall without the `-O` flag.**
 

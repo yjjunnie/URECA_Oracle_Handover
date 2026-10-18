@@ -133,7 +133,7 @@ token**. It was deliberately not copied into this repo. See `05_next_steps.md` โ
 
 **Weights.** `boltz2_conf.ckpt` (2.29 GB) and `mols.tar` (1.86 GB) were transferred to
 NSCC manually by `scp -O`; they are *not* auto-downloaded in this setup because compute
-nodes have no outbound internet. They live in the parent folder locally; re-obtainable
+nodes were assumed to have no outbound internet (see `06_script_legend.md` ยง1.2). They live in the parent folder locally; re-obtainable
 from the Boltz release assets.
 
 ---

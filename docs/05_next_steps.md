@@ -42,9 +42,17 @@ the mechanism and tells you the re-run is worth it. Do this before anything else
 **Effort: low to decide, days to do. Value: high.**
 
 `generate_yamls.py:128` sets `"msa": "empty"` and `03_boltz_batch.pbs` omits
-`--use_msa_server`, so all 1,296 Boltz complexes were single-sequence. This was a
-reasonable call (compute nodes have no outbound internet), but it means the Boltz result
-bounds *MSA-free* prediction only.
+`--use_msa_server`, so all 1,296 Boltz complexes were single-sequence. The stated reason was
+that compute nodes have no outbound internet, but it means the Boltz result bounds
+*MSA-free* prediction only.
+
+**Check the premise before accepting it.** That no-internet rule looks wrong, or at least
+far too broad: several compute-node jobs in this project installed packages from the network
+and one uploaded to Hugging Face successfully. See
+[`06_script_legend.md` §1.2](06_script_legend.md#12-network-access-from-compute-nodes-unresolved).
+`01_test_boltz.pbs:92` even passes `--use_msa_server` in a GPU job. If the MSA server was in
+fact reachable, then the single largest constraint on the project's main result was
+self-imposed by mistake, and this task moves up the list.
 
 Options: pre-compute MSAs on a login node and reference them from the YAMLs, or supply the
 same `casrx_orthologs.a3m` used for AF3. Boltz stayed confident without an MSA

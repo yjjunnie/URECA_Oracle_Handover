@@ -11,7 +11,8 @@ structure-prediction experiment**, so you do not repeat a settled null result.
 >
 > **Boltz-2 (§2–3) also ran single-sequence**, by explicit choice,
 > `generate_yamls.py:128` sets `"msa": "empty"` and `03_boltz_batch.pbs` omits
-> `--use_msa_server` (compute nodes have no outbound internet). Unlike AF3, Boltz stayed
+> `--use_msa_server` (stated reason: compute nodes have no outbound internet, a premise that
+> looks wrong, see `06_script_legend.md` §1.2). Unlike AF3, Boltz stayed
 > confident without an MSA (pLDDT 0.71, pTM 0.74, ipTM 0.78), so its predictions are
 > usable and the test genuinely ran, but it is **not an MSA-independent replication of
 > AF3**. Both arms tested the same degraded condition.
@@ -65,7 +66,8 @@ conclusion in §1 was drawn from the left-hand column.
 - **AF3 (§1): void**, including the partial correlations. The protein never folded, so
   nothing there is a test of anything.
 - **Boltz-2 (§2–3): valid, but narrower than advertised.** Boltz ran single-sequence too,
-  deliberately, since compute nodes have no outbound internet for the MSA server. The
+  deliberately, on the stated grounds that compute nodes have no outbound internet for the
+  MSA server. That premise looks wrong; see `06_script_legend.md` §1.2. The
   difference from AF3 is that Boltz *stayed confident anyway*: `complex_plddt` mean 0.706
   (range 0.62–0.82), `ptm` 0.741, `iptm` 0.782, comparable to the *fixed* AF3 run (74.9),
   not the broken one. So Boltz produced usable structures and the correlation test
