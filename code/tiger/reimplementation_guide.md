@@ -584,7 +584,7 @@ These layers are **fully reusable** if you're working with sequence data:
 
 ### 15.2 Understanding Data Packing/Unpacking
 
-**The Problem:** Neural networks expect single flat tensors as input, but we have multiple data types (DNA sequences, guide sequences, scalar features).
+**The Problem:** Neural networks expect single flat tensors as input, but the input comprises multiple data types (DNA sequences, guide sequences, scalar features).
 
 **The Solution:** A serialization pattern where `pack_inputs()` flattens everything into one tensor, and `OneHotInputParser` unpacks it back.
 
