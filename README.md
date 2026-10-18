@@ -1,176 +1,171 @@
 # URECA Oracle Handover
 
-This is everything I built and found during my URECA project on AI models for CRISPR-Cas13d
-guide RNA design. I'm writing it for whoever picks this up next.
+Handover documentation for the URECA project on AI models for CRISPR-Cas13d guide RNA (gRNA)
+design.
 
-I've assumed you're new to the project and possibly new to research computing generally.
-Where I use a term you might not have met yet, I explain it. Read this file first, then
-`code/README.md` if you want to start running things, or `docs/` if you want the full story.
+- **This file** — scope, results, status, repo layout, recommended next steps.
+- **[`code/README.md`](code/README.md)** — how to run the pipelines.
+- **[`docs/`](docs/)** — per-topic detail.
 
 ---
 
-## 1. The question I was trying to answer
+## 1. Objective
 
-When you use CRISPR-Cas13d to knock down a gene, you have to pick a **guide RNA** (gRNA) —
-a short sequence that tells the enzyme where to cut. Some guides work brilliantly, some do
-nothing, and you can't tell which just by looking at them.
+Selecting an effective gRNA for CRISPR-Cas13d knockdown is not possible by inspection of the
+sequence alone. The current best predictor, **TIGER**, is a deep learning model trained
+directly on large-scale screens in which thousands of guides were tested in cells, and so
+requires expensive labelled data.
 
-The best current predictor is **TIGER**, a deep learning model trained directly on large
-screens where thousands of guides were tested in cells. That works, but it needs that
-expensive labelled data in the first place.
+**Research question: can a pretrained model that has never seen knockdown data rank gRNAs?**
 
-**My question: could a pretrained model that has never seen knockdown data still rank guides?**
+A positive result would allow guide design for a new Cas13 variant without first running a
+screen. Three approaches were tested.
 
-If yes, you could design guides for any new Cas13 variant without running a screen first.
-I tested three ideas:
-
-| Idea | The reasoning | Models I tried |
+| Approach | Rationale | Models |
 |---|---|---|
-| Structure prediction | A guide that really engages its target should form a well-folded Cas13d:crRNA:target complex. So the model's *confidence* in the structure should track how well the guide works. | AlphaFold3, Boltz-2, ESMFold |
-| Protein language model | Score how "plausible" a Cas13 protein sequence is, to screen new orthologs | ProGen3 |
-| RNA secondary structure | A guide can only bind if its target site isn't already folded up and inaccessible | LinearFold / RNAfold |
+| Structure prediction | An effective guide should form a well-folded Cas13d:crRNA:target complex, so model *confidence* in the structure should track guide activity. | AlphaFold3, Boltz-2, ESMFold |
+| Protein language model | Score the plausibility of a Cas13 protein sequence to screen new orthologs. | ProGen3 |
+| RNA secondary structure | A guide can only bind if the target site is not already folded and inaccessible. | LinearFold / RNAfold |
 
 ---
 
-## 2. What I found
+## 2. Results
 
-**The structural confidence idea didn't work — for the version of it I actually managed to
-test.** I folded about 1,800 complexes in total across two structure predictors and three
-Cas proteins. No confidence metric — ipTM, pTM, pLDDT, ranking score — correlated
-meaningfully with measured guide activity.
+All figures are in [`docs/04_results.md`](docs/04_results.md).
 
-Two caveats I want you to carry forward, because they narrow this a lot. The AlphaFold3
-half turned out to be broken (see the box below). And **neither** predictor was given an
-MSA, so what I really showed is that *MSA-free* structure prediction doesn't predict guide
-activity. That leaves 1,296 Boltz-2 complexes as the solid part of the result.
+**2.1 Structural confidence did not predict guide activity.** Approximately 1,800 complexes
+were folded across two structure predictors and three Cas proteins. No confidence metric
+(ipTM, pTM, pLDDT, ranking score) correlated meaningfully with measured guide activity.
 
-What *did* work was far simpler. **Target-site accessibility** (`log_unpaired`, basically
-"how unfolded is the target site") reached ρ = −0.234, p = 1.2 × 10⁻⁷ — several times
-stronger than anything the structure predictors produced. I also checked whether the
-structural scores added anything *on top of* those simple features. They added nothing.
+Two constraints narrow this result:
 
-All numbers are in [`docs/04_results.md`](docs/04_results.md).
+1. The AlphaFold3 arm was invalid — see section 2.3.
+2. Neither predictor was supplied an MSA. The result therefore applies to *MSA-free*
+   structure prediction only. The 1,296 Boltz-2 complexes constitute the valid portion.
 
-### ⚠️ Read this before you trust the AlphaFold3 half of that result
+**2.2 Target-site accessibility outperformed all structural metrics.** The `log_unpaired`
+feature (degree to which the target site is unfolded) reached ρ = −0.234, p = 1.2 × 10⁻⁷ —
+several times stronger than any structure predictor metric. Structural scores added nothing
+when tested as additional features on top of these simple features.
 
-**The 500-complex AF3 run was broken, and I found out why too late to redo it.**
+### 2.3 ⚠️ The AlphaFold3 arm is invalid
 
-Every one of those complexes came back with mean pLDDT around 30 and pTM around 0.19.
-pLDDT is AF3's confidence score, roughly 0–100; 30 means "I have no idea". That's not a
-weak prediction, that's no prediction at all.
+The 500-complex AF3 run was broken. The cause was identified too late in the project to
+permit a re-run.
 
-The cause was an **empty protein MSA**. An MSA (multiple sequence alignment) is a stack of
-evolutionarily related sequences that structure predictors rely on to infer which parts of
-a protein touch each other. AF3's automatic database search didn't find Cas13d homologs,
-so it folded CasRx with nothing to go on.
+- **Symptom:** every complex returned mean pLDDT ≈ 30 and pTM ≈ 0.19. On AF3's confidence
+  scale of roughly 0–100, pLDDT 30 indicates no usable prediction rather than a weak one.
+- **Cause:** an empty protein MSA. An MSA (multiple sequence alignment) is a stack of
+  evolutionarily related sequences that structure predictors use to infer intra-protein
+  contacts. AF3's automatic database search returned no Cas13d homologs, so CasRx was folded
+  without alignment information.
+- **Fix:** written and validated, not applied at scale.
+  `code/alphafold3/build_casrx_msa.py` builds a curated alignment from the 52 Cas13d
+  orthologs in the Konermann dataset; `add_msa_to_json.py` injects it.
 
-I wrote the fix: `code/alphafold3/build_casrx_msa.py` builds a curated alignment from the
-52 Cas13d orthologs in the Konermann dataset, and `add_msa_to_json.py` injects it. On a
-TFRC-targeting complex, the difference is not subtle:
+Effect of the curated MSA on a single TFRC-targeting complex:
 
-| | 500-run (AF3's own MSA) | with my curated MSA |
+| Metric | 500-run (AF3 automatic MSA) | Curated MSA |
 |---|---|---|
 | pTM | 0.19 | **0.85** |
-| protein chain pTM | 0.18 | **0.89** |
-| mean pLDDT | ~30 | **74.9** |
+| Protein chain pTM | 0.18 | **0.89** |
+| Mean pLDDT | ~30 | **74.9** |
 
-**I only ever ran one complex this way.** The fix is validated, not applied.
+**Only one complex was run with the curated MSA.** Consequences for interpretation:
 
-So: the AF3 numbers in `docs/04_results.md` test a pipeline that wasn't folding the
-protein. Treat that half of the result as provisional. The Boltz-2 half is independent and
-still stands on its own, and the RNA chains stayed poorly modelled even with the good MSA
-(chain pTM 0.15 and 0.05), so I don't expect the conclusion to flip — but it hasn't
-actually been tested yet, and you shouldn't write it up as though it has.
+- The AF3 numbers in `docs/04_results.md` describe a pipeline that was not folding the
+  protein. Treat that arm as provisional.
+- The Boltz-2 arm is independent and unaffected.
+- RNA chains remained poorly modelled even with the curated MSA (chain pTM 0.15 and 0.05),
+  so the overall conclusion is unlikely to change — but this has not been tested and should
+  not be written up as though it has.
 
 ---
 
-## 3. Where I left things
+## 3. Component status
 
 | Component | State |
 |---|---|
-| **AlphaFold3** pipeline | ⚠️ 500 complexes run and analysed, **but with a broken MSA** — see the warning in section 2. Fix written and validated on 1 complex, never re-run at scale. |
-| **Boltz-2** pipeline | ✅ Done — 4 datasets, plus a protein-balanced re-run |
-| **LinearFold / MFE baselines** | ✅ Done — and they turned out to be the best predictors |
-| **TIGER** | ✅ Running locally; used as my source of activity labels. Never retrained. |
-| **Azimuth** (SpCas9) | ✅ Used as an out-of-domain control |
-| **ESMFold** | ⚠️ Blocked — pLDDT looked wrong, I wrote a diagnostic, never ran it to a conclusion |
-| **ProGen3** | ⚠️ Set up and working, but I never actually pointed it at the Cas13 orthologs |
+| **AlphaFold3** pipeline | ⚠️ 500 complexes run and analysed, but with a broken MSA (section 2.3). Fix written and validated on 1 complex; never re-run at scale. |
+| **Boltz-2** pipeline | ✅ Complete — 4 datasets, plus a protein-balanced re-run. |
+| **LinearFold / MFE baselines** | ✅ Complete — the strongest predictors found. |
+| **TIGER** | ✅ Running locally; used as the source of activity labels. Never retrained. |
+| **Azimuth** (SpCas9) | ✅ Used as an out-of-domain control. |
+| **ESMFold** | ⚠️ Blocked — pLDDT values appeared incorrect; a diagnostic was written but never run to a conclusion. |
+| **ProGen3** | ⚠️ Set up and working, but never pointed at the Cas13 orthologs. |
 
-The two ⚠️ rows are the obvious places to start. Both are close to done.
+The two ⚠️ components are both near completion and are the recommended starting points.
 
 ---
 
-## 4. What's in this repo
+## 4. Repository contents
 
-| Folder | What it's for |
+| Path | Contents |
 |---|---|
-| [`code/`](code/) | The job scripts I wrote to run all of this on NSCC. **Start here if you want to run something.** The models themselves aren't included — that README explains how to get them. |
-| [`docs/01_oracles.md`](docs/01_oracles.md) | Each model: what it does, how well it's supposed to work, how I ran it, what came of it |
-| [`docs/02_nscc_job_scripts.md`](docs/02_nscc_job_scripts.md) | How to write and submit jobs on NSCC. Read before you touch the cluster. |
-| [`docs/03_datasets.md`](docs/03_datasets.md) | The datasets, their columns, and which direction "active" means in each one |
-| [`docs/04_results.md`](docs/04_results.md) | Every number I got |
-| [`docs/05_next_steps.md`](docs/05_next_steps.md) | What I'd do next, ranked |
-| [`results/`](results/) | The actual output files, copied in so you don't need cluster access to read them |
-| [`templates/`](templates/) | Blank PBS job scripts to copy when writing your own |
+| [`code/`](code/) | Job scripts for running all pipelines on NSCC. Start here to run something. Model code is not vendored; `code/README.md` covers acquisition. |
+| [`docs/01_oracles.md`](docs/01_oracles.md) | Per-model detail: function, expected performance, how it was run, outcome. |
+| [`docs/02_nscc_job_scripts.md`](docs/02_nscc_job_scripts.md) | Writing and submitting NSCC jobs. Read before using the cluster. |
+| [`docs/03_datasets.md`](docs/03_datasets.md) | Datasets, their columns, and the direction of "active" in each. |
+| [`docs/04_results.md`](docs/04_results.md) | Complete results. |
+| [`docs/05_next_steps.md`](docs/05_next_steps.md) | Ranked next steps with rationale. |
+| [`results/`](results/) | Output files, copied in so cluster access is not required to read them. |
+| [`templates/`](templates/) | Blank PBS job scripts to copy. |
 
 ---
 
-## 5. If you only have one day
+## 5. Getting started
 
-1. Read [`docs/02_nscc_job_scripts.md`](docs/02_nscc_job_scripts.md) and get an NSCC account
-   with GPU allocation sorted. The account takes longer to arrive than you'd expect, so
-   start it immediately.
-2. Copy `templates/single_gpu.pbs`, put your own paths in, submit it, and confirm that
-   `nvidia-smi` and `torch.cuda.is_available()` both come back working.
-
-   **Do this before anything else.** Most of the time I lost on this project went to
-   environment and CUDA problems, not to the actual science. Finding out your GPU setup is
-   broken on day one is much better than finding out after a 6-hour batch job fails.
-3. Read [`code/README.md` §3a — Dependencies](code/README.md#3a-dependencies--read-the-upstream-install-docs-first)
-   before you try to install any model. **Always read the upstream repo's own installation
-   docs first** — they're maintained and authoritative. §3a is just the list of things that
-   broke on NSCC: AlphaFold 3 can't use its own container route without root, the login
-   node's gcc is too old to compile it, `flash-attention` won't build so ProGen3 needs a
-   version-pinned prebuilt wheel, and TIGER needs Python 3.9. None of that is in the
-   upstream docs, because they assume a normal machine.
-4. Read [`docs/04_results.md`](docs/04_results.md) so you don't accidentally re-run the
-   experiment that already came back null — and so you see which half of it I broke.
-5. Pick something from [`docs/05_next_steps.md`](docs/05_next_steps.md).
+1. **Request NSCC access.** Read [`docs/02_nscc_job_scripts.md`](docs/02_nscc_job_scripts.md)
+   and arrange an account with GPU allocation. Accounts take longer to issue than expected;
+   start this first.
+2. **Verify the GPU environment before anything else.** Copy `templates/single_gpu.pbs`,
+   substitute local paths, submit it, and confirm both `nvidia-smi` and
+   `torch.cuda.is_available()` succeed. Environment and CUDA problems consumed the majority
+   of project time, more than the research itself. A broken GPU setup is far cheaper to
+   discover on day one than after a 6-hour batch job fails.
+3. **Read the dependency notes before installing any model:**
+   [`code/README.md` §3a](code/README.md#3a-dependencies--read-the-upstream-install-docs-first).
+   Consult each upstream repository's own installation documentation first, as it is
+   maintained and authoritative. §3a covers only the NSCC-specific failures: AlphaFold 3
+   cannot use its container route without root, the login node's gcc is too old to compile
+   it, `flash-attention` does not build so ProGen3 requires a version-pinned prebuilt wheel,
+   and TIGER requires Python 3.9. None of this appears upstream, which assumes a
+   conventional machine.
+4. **Read [`docs/04_results.md`](docs/04_results.md)** to avoid re-running the experiment
+   that already returned a null result, and to see which arm was invalid.
+5. **Select a task** from [`docs/05_next_steps.md`](docs/05_next_steps.md).
 
 ---
 
-## 6. What I'd pick up first
+## 6. Recommended next steps
 
-If it were me, in this order:
-
-1. **Re-run the AF3 batch with the curated MSA.** This is the biggest hole I left. The
-   pipeline is built and validated on one complex (see the warning in section 2) — it just
-   needs pointing at all 500. Use `03c_af3_inference_native.pbs`, *not*
-   `03_af3_inference_batched.pbs`, which is the one that produced the broken run.
-   (`03b` runs the same fixed job through a Singularity container, but the container image
-   is gone from scratch, so `03c` is the one that works today.) Until this is done, the AF3
-   result isn't really a result.
-2. **Finish the ESMFold diagnostic.** A few hours, and it's a correctness question rather
-   than a research one — the script is written, it just needs running and reading. Given
-   what the MSA problem turned out to be, I'd want to rule out a similar confidence-
-   averaging bug before trusting any pLDDT number in this project.
-3. **Run ProGen3 on the Konermann orthologs.** Completely unrun, everything's in place,
-   and it's a self-contained result.
-4. **Add the oracle scores as extra features to TIGER** rather than testing them alone.
-   "Does this metric rank guides by itself?" is answered — no. "Does it add anything to a
-   model that already works?" is the better question and I never got to it.
-
-Reasoning for all of these, plus the things I'd actively avoid repeating, is in
+In priority order. Full rationale, plus work to avoid repeating, is in
 [`docs/05_next_steps.md`](docs/05_next_steps.md).
 
+1. **Re-run the AF3 batch with the curated MSA.** The largest outstanding gap. The pipeline
+   is built and validated on one complex (section 2.3) and needs only to be pointed at all
+   500. Use `03c_af3_inference_native.pbs`, **not** `03_af3_inference_batched.pbs`, which
+   produced the broken run. (`03b` runs the same fixed job via Singularity, but the
+   container image is no longer on scratch, so `03c` is the working route.) The AF3 result
+   is not usable until this is done.
+2. **Complete the ESMFold diagnostic.** A few hours of work; the script is written and needs
+   running and interpreting. This is a correctness question rather than a research one.
+   Given the nature of the MSA problem, a similar confidence-averaging bug should be ruled
+   out before any pLDDT value in this project is trusted.
+3. **Run ProGen3 on the Konermann orthologs.** Entirely unrun, fully set up, and a
+   self-contained result.
+4. **Add oracle scores to TIGER as additional features** rather than testing them in
+   isolation. Whether these metrics rank guides on their own is answered — they do not.
+   Whether they add anything to a model that already works is the better question and was
+   never addressed.
+
 ---
 
-## 7. One thing to deal with immediately
+## 7. Immediate action required
 
-There's a **Hugging Face access token sitting in plaintext** in the original working copy of
-the project, in `URECA_Code/boltz/download_results_from_hf.py` and `upload_to_hf.py`. I've
-stripped it out of everything in this repo, but the originals still have it.
+A **Hugging Face access token is stored in plaintext** in the original working copy of the
+project, in `URECA_Code/boltz/download_results_from_hf.py` and `upload_to_hf.py`. It has been
+stripped from everything in this repository, but the originals still contain it.
 
-**Please revoke it** at https://huggingface.co/settings/tokens before you share that folder
-with anyone or put it on GitHub. Instructions for setting up your own token properly are in
-[`code/README.md`](code/README.md).
+**Revoke it** at https://huggingface.co/settings/tokens before sharing that folder or
+publishing it. [`code/README.md`](code/README.md) covers correct token setup.
