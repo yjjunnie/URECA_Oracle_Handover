@@ -97,6 +97,11 @@ git clone https://github.com/facebookresearch/esm.git
 git clone https://github.com/MicrosoftResearch/Azimuth.git
 ```
 
+A table of which models additionally require **manually downloaded weights**, with sizes and
+the reason each is excluded, is in
+[`../docs/06_script_legend.md` §9.2](../docs/06_script_legend.md#92-model-weights--all-require-manual-download).
+No weights are in this repository.
+
 **Versions used in this project**, worth pinning, as a newer upstream release may not match
 these scripts:
 
@@ -337,6 +342,12 @@ DEST_DIRS = {
 ---
 
 ## 5. The scripts
+
+For a single consolidated legend of every script — with its model, purpose, run order, and
+whether it belongs on a GPU node, a CPU node or the login node — see
+[`../docs/06_script_legend.md`](../docs/06_script_legend.md). That file also introduces each
+model for a reader meeting it for the first time, and inventories everything that must be
+downloaded manually. The sections below are the per-directory detail.
 
 ### 5.1 `boltz/` — start here
 

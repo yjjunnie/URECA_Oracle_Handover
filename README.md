@@ -108,6 +108,7 @@ The two ⚠️ components are both near completion and are the recommended start
 | [`docs/03_datasets.md`](docs/03_datasets.md) | Datasets, their columns, and the direction of "active" in each. |
 | [`docs/04_results.md`](docs/04_results.md) | Complete results. |
 | [`docs/05_next_steps.md`](docs/05_next_steps.md) | Ranked next steps with rationale. |
+| [`docs/06_script_legend.md`](docs/06_script_legend.md) | **Legend of every script** — name, model, purpose, and which node it runs on — plus how to run one on NSCC and a full inventory of what must be downloaded manually (model code, weights, databases, datasets). |
 | [`results/`](results/) | Output files, copied in so cluster access is not required to read them. |
 | [`templates/`](templates/) | Blank PBS job scripts to copy. |
 
@@ -131,9 +132,16 @@ The two ⚠️ components are both near completion and are the recommended start
    it, `flash-attention` does not build so ProGen3 requires a version-pinned prebuilt wheel,
    and TIGER requires Python 3.9. None of this appears upstream, which assumes a
    conventional machine.
-4. **Read [`docs/04_results.md`](docs/04_results.md)** to avoid re-running the experiment
+4. **Request the restricted assets early.** No model weights are in this repository.
+   AlphaFold3's require an approval request to DeepMind that is not instant, so submit it
+   before it becomes the blocker. Full inventory:
+   [`docs/06_script_legend.md` §9](docs/06_script_legend.md#9-what-is-not-in-this-repository).
+5. **Identify the relevant scripts** in
+   [`docs/06_script_legend.md`](docs/06_script_legend.md), which lists every script with its
+   model, purpose, run order, and whether it needs a GPU node, a CPU node, or a login node.
+6. **Read [`docs/04_results.md`](docs/04_results.md)** to avoid re-running the experiment
    that already returned a null result, and to see which arm was invalid.
-5. **Select a task** from [`docs/05_next_steps.md`](docs/05_next_steps.md).
+7. **Select a task** from [`docs/05_next_steps.md`](docs/05_next_steps.md).
 
 ---
 
